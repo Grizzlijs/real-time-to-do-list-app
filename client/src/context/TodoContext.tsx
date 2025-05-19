@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { TodoList, Task } from '../types';
 import * as api from '../services/api';
 import * as socketService from '../services/socket';
@@ -110,7 +110,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   });
 
   // Load all todo lists
-  const loadLists = async () => {
+  const loadLists = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -122,10 +122,10 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       setError('Failed to load lists');
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Load a specific list by slug and its tasks
-  const loadListBySlug = async (slug: string) => {
+  const loadListBySlug = useCallback(async (slug: string) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -142,7 +142,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       setError('Failed to load list');
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Create a new list
   const createNewList = async (title: string) => {

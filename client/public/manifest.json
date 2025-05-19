@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Todo Collab",
+  "name": "Real-Time Collaborative To-Do List",
+  "description": "A modern, real-time collaborative to-do list application for teams and individuals",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,38 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait",
+  "theme_color": "#1976d2",
+  "background_color": "#f5f5f5",
+  "categories": ["productivity", "collaboration", "organization"],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Collaborative To-Do List Dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create New List",
+      "short_name": "New List",
+      "description": "Create a new to-do list",
+      "url": "/create",
+      "icons": [{ "src": "shortcut-icon.png", "sizes": "96x96" }]
+    }
+  ]
 }

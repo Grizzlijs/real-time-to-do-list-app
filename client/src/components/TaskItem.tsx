@@ -184,18 +184,22 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false }) =
             onChange={(e) => setEditDescription(e.target.value)}
             margin="dense"
             multiline
-            rows={3}
-            onKeyDown={(e) => {
+            rows={3}            onKeyDown={(e) => {
               if (e.key === 'Tab') {
                 e.preventDefault();
-                const start = e.currentTarget.selectionStart;
-                const end = e.currentTarget.selectionEnd;
+                const target = e.target as HTMLTextAreaElement;
+                const start = target.selectionStart || 0;
+                const end = target.selectionEnd || 0;
                 setEditDescription(
                   editDescription.substring(0, start) + '  ' + editDescription.substring(end)
                 );
                 setTimeout(() => {
-                  e.currentTarget.selectionStart = start + 2;
-                  e.currentTarget.selectionEnd = start + 2;
+                  // Need to refocus and set selection after state update
+                  const textField = e.currentTarget.querySelector('textarea');
+                  if (textField) {
+                    textField.selectionStart = start + 2;
+                    textField.selectionEnd = start + 2;
+                  }
                 }, 0);
               }
             }}

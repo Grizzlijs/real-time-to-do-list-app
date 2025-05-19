@@ -12,6 +12,7 @@ const theme = createTheme({
   palette: {
     primary: {
       main: '#1976d2',
+      dark: '#004cad', // Added for hover effects
     },
     secondary: {
       main: '#dc004e',

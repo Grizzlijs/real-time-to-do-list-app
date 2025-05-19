@@ -1,12 +1,12 @@
 {
   "name": "real-time-to-do-list-app",
   "version": "1.0.0",
-  "description": "A real-time collaborative to-do list application",
-  "scripts": {
+  "description": "A real-time collaborative to-do list application",  "scripts": {
     "server": "cd server && npm run dev",
-    "client": "cd client && npm start",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    "client": "cd client && npm start",    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && npm run install-server && npm run install-client",
+    "install-server": "cd server && npm install",
+    "install-client": "cd client && npm install --legacy-peer-deps"
   },
   "keywords": [
     "react",

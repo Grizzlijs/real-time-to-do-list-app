@@ -1,11 +1,32 @@
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, DropResult, DroppableProps, DroppableProvided } from 'react-beautiful-dnd';
 import TaskItem from './TaskItem';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import { useTodo } from '../context/TodoContext';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import { Task } from '../types';
+
+// This fixes the defaultProps warning with react-beautiful-dnd
+const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
+  const [enabled, setEnabled] = useState(false);
+  
+  React.useEffect(() => {
+    // This is a workaround for React 18 Strict Mode
+    const animation = requestAnimationFrame(() => setEnabled(true));
+    return () => {
+      cancelAnimationFrame(animation);
+      setEnabled(false);
+    };
+  }, []);
+  
+  if (!enabled) {
+    return null;
+  }
+  
+  return <Droppable {...props}>{children}</Droppable>;
+};
 
 const TaskList: React.FC = () => {
   const { 
@@ -63,9 +84,8 @@ const TaskList: React.FC = () => {
 
   // Get hierarchical task structure for display
   const hierarchicalTasks = getTaskHierarchy();
-
   // Filter tasks based on current filter
-  let displayedTasks;
+  let displayedTasks: Task[] = [];
   if (filter === 'all') {
     displayedTasks = hierarchicalTasks;
   } else {
@@ -74,7 +94,9 @@ const TaskList: React.FC = () => {
       if (filter === 'completed') return task.is_completed;
       return true;
     });
-  }  return (
+  }
+  
+  return (
     <Paper elevation={2} sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '75vh' }}>
       <Typography variant="h5" gutterBottom>
         {currentList?.title || 'Tasks'}
@@ -144,8 +166,8 @@ const TaskList: React.FC = () => {
           
           {/* Task list with drag and drop */}
           <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="task-list">
-              {(provided) => (
+            <StrictModeDroppable droppableId="task-list">
+              {(provided: DroppableProvided) => (
                 <Box
                   {...provided.droppableProps}
                   ref={provided.innerRef}
@@ -169,7 +191,7 @@ const TaskList: React.FC = () => {
                   {provided.placeholder}
                 </Box>
               )}
-            </Droppable>
+            </StrictModeDroppable>
           </DragDropContext>
         </>
       )}

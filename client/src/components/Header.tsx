@@ -9,20 +9,18 @@ import {
   DialogContent, 
   DialogActions, 
   TextField,
-  IconButton,
   Menu,
   MenuItem,
   Box,
   Divider,
-  Stack,
-  Avatar
+  Stack
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTodo } from '../context/TodoContext';
 import AddIcon from '@mui/icons-material/Add';
 import ListIcon from '@mui/icons-material/List';
 import MenuIcon from '@mui/icons-material/Menu';
-import { v4 as uuidv4 } from 'uuid';
+// uuid is used in context but not here
 
 const Header: React.FC = () => {
   const { lists, createNewList, currentList } = useTodo();
@@ -59,41 +57,86 @@ const Header: React.FC = () => {
       console.error('Failed to create list:', error);
     }
   };
-
   return (
     <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component={Link} to="/" sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit' }}>
+      <AppBar 
+        position="static" 
+        elevation={0} 
+        sx={{ 
+          bgcolor: 'white', 
+          color: 'text.primary',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
+        }}
+      >
+        <Toolbar sx={{ py: 1 }}>
+          <Typography 
+            variant="h6" 
+            component={Link} 
+            to="/" 
+            sx={{ 
+              flexGrow: 1, 
+              textDecoration: 'none', 
+              color: 'primary.main', 
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <ListIcon color="primary" />
             Collaborative To-Do List
           </Typography>
           
           {/* Current list indicator */}
           {currentList && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-              <Typography variant="subtitle1">
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              mr: 2, 
+              py: 0.5, 
+              px: 2, 
+              bgcolor: 'rgba(25, 118, 210, 0.08)', 
+              borderRadius: 1 
+            }}>
+              <Typography variant="body2" color="primary.main" fontWeight={500}>
                 {currentList.title}
               </Typography>
             </Box>
           )}
-          
-          {/* Lists menu */}
-          <Stack direction="row" spacing={1}>
+            {/* Lists menu */}
+          <Stack direction="row" spacing={2}>
             <Button 
-              color="inherit" 
+              variant="outlined"
+              color="primary" 
+              sx={{
+                borderRadius: '4px',
+                textTransform: 'none',
+                px: 2,
+                '&:hover': {
+                  bgcolor: 'rgba(0, 76, 173, 0.04)'
+                }
+              }}
               startIcon={<AddIcon />}
               onClick={() => setIsDialogOpen(true)}
             >
               New List
             </Button>
             
-            <IconButton 
-              color="inherit" 
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                borderRadius: '4px',
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: '#004cad'
+                }
+              }}
               onClick={handleOpenMenu}
-              edge="end"
+              endIcon={<MenuIcon />}
             >
-              <MenuIcon />
-            </IconButton>
+              My Lists
+            </Button>
           </Stack>
         </Toolbar>
       </AppBar>

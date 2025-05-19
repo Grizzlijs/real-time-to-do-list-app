@@ -63,16 +63,30 @@ For quick setup on Windows, we've included helper scripts:
 
 #### Install all dependencies
 
+Install all project dependencies (root, server, and client) with a single command:
+
+   ```bash
+   npm run install-all
+   ```
+
+Or install dependencies for each part separately:
+
 1. Install root project dependencies:
 
    ```bash
    npm install
    ```
 
-2. Install server and client dependencies:
+2. Install server dependencies:
 
    ```bash
-   npm run install-all
+   cd server && npm install
+   ```
+
+3. Install client dependencies:
+
+   ```bash
+   cd client && npm install
    ```
 
 #### Environment Configuration
@@ -127,6 +141,22 @@ npm run client
 ## Deployed Version
 
 [Demo Link] - Coming soon!
+
+## Implemented User Stories
+
+The following user stories have been implemented in this application:
+
+✅ **I as a user can create to-do items, such as a grocery list** - Core functionality to create tasks
+✅ **I as another user can collaborate in real-time with user** - All changes appear instantly across all connected users
+✅ **I as a user can mark to-do items as "done"** - Task completion tracking is implemented
+✅ **I as a user can filter the to-do list and view items that were marked as done** - Filter by All, Active, or Completed tasks
+✅ **I as a user can create multiple to-do lists where each list has its unique URL** - Create and share multiple lists with unique URLs
+✅ **I as a user can change the order of tasks via drag & drop** - Reorder tasks using drag and drop functionality
+✅ **I as a user can add sub-tasks to my to-do items** - Create hierarchical task structures
+✅ **I as a user can specify cost/price for a task or a subtask** - Add cost information to tasks and subtasks
+✅ **I as a user can see the sum of the subtasks aggregated in the parent task** - Costs are aggregated from subtasks to parent tasks
+✅ **I as a user can add sub-descriptions of tasks in Markdown** - Rich text descriptions using Markdown
+✅ **I as a user can be sure that my todos will be persisted** - Data is stored in PostgreSQL database
 
 ## License
 

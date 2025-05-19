@@ -27,7 +27,21 @@ pause > nul
 
 echo.
 echo Installing dependencies...
-call npm run install-all
+echo.
+echo Installing root dependencies...
+call npm install
+
+echo.
+echo Installing server dependencies...
+cd server
+call npm install
+cd ..
+
+echo.
+echo Installing client dependencies...
+cd client
+call npm install --legacy-peer-deps
+cd ..
 
 if %ERRORLEVEL% NEQ 0 (
   echo.
