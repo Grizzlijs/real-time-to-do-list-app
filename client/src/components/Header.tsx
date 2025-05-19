@@ -89,8 +89,8 @@ const Header: React.FC = () => {
         }}
       >
         <Container maxWidth="lg">
-          <Toolbar sx={{ py: { xs: 1, md: 1.5 }, px: { xs: 1, md: 2 } }}>
-            {/* Logo and App Name */}
+          <Toolbar sx={{ py: { xs: 1, md: 1.5 }, px: { xs: 1, md: 2 }, justifyContent: 'space-between' }}>
+            {/* Left side - Logo and App Name */}
             <Box 
               component={Link}
               to="/"
@@ -98,7 +98,6 @@ const Header: React.FC = () => {
                 display: 'flex', 
                 alignItems: 'center', 
                 textDecoration: 'none',
-                mr: 3
               }}
             >
               
@@ -125,13 +124,11 @@ const Header: React.FC = () => {
               </Typography>
             </Box>
             
-            {/* Current list indicator */}
+            {/* Middle - Current list indicator */}
             {currentList && (
               <Box sx={{ 
                 display: { xs: 'none', md: 'flex' }, 
                 alignItems: 'center', 
-                ml: 2,
-                mr: 'auto', 
                 py: 0.5, 
                 px: 2, 
                 bgcolor: 'rgba(5, 89, 201, 0.06)', 
@@ -145,7 +142,7 @@ const Header: React.FC = () => {
               </Box>
             )}
             
-            {/* Desktop menu */}
+            {/* Right side - Action buttons */}
             {!isMobile ? (
               <Stack direction="row" spacing={2} alignItems="center">
                 <Button 
@@ -190,7 +187,6 @@ const Header: React.FC = () => {
                   color="primary" 
                   edge="end" 
                   onClick={handleOpenMobileMenu}
-                  sx={{ ml: 'auto' }}
                 >
                   <MenuIcon />
                 </IconButton>
