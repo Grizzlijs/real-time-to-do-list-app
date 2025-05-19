@@ -5,14 +5,23 @@ A modern, real-time collaborative to-do list application built with PostgreSQL, 
 ## Features
 
 ✅ **Create to-do items** - Create tasks easily and quickly
+
 ✅ **Real-time collaboration** - See changes instantly across all connected users
+
 ✅ **Mark items as done** - Keep track of completed tasks
+
 ✅ **Filter tasks** - View all, active, or completed tasks
+
 ✅ **Multiple lists with unique URLs** - Create and share different lists for different purposes
+
 ✅ **Drag & drop reordering** - Change task order seamlessly
+
 ✅ **Subtasks** - Create hierarchical task structures
+
 ✅ **Cost aggregation** - Track costs and see them aggregated at parent task level
+
 ✅ **Rich text descriptions** - Add detailed Markdown descriptions to tasks
+
 
 ## Tech Stack
 
@@ -147,15 +156,25 @@ npm run client
 The following user stories have been implemented in this application:
 
 ✅ **I as a user can create to-do items, such as a grocery list** - Core functionality to create tasks
+
 ✅ **I as another user can collaborate in real-time with user** - All changes appear instantly across all connected users
+
 ✅ **I as a user can mark to-do items as "done"** - Task completion tracking is implemented
+
 ✅ **I as a user can filter the to-do list and view items that were marked as done** - Filter by All, Active, or Completed tasks
+
 ✅ **I as a user can create multiple to-do lists where each list has its unique URL** - Create and share multiple lists with unique URLs
+
 ✅ **I as a user can change the order of tasks via drag & drop** - Reorder tasks using drag and drop functionality
+
 ✅ **I as a user can add sub-tasks to my to-do items** - Create hierarchical task structures
+
 ✅ **I as a user can specify cost/price for a task or a subtask** - Add cost information to tasks and subtasks
+
 ✅ **I as a user can see the sum of the subtasks aggregated in the parent task** - Costs are aggregated from subtasks to parent tasks
+
 ✅ **I as a user can add sub-descriptions of tasks in Markdown** - Rich text descriptions using Markdown
+
 ✅ **I as a user can be sure that my todos will be persisted** - Data is stored in PostgreSQL database
 
 ## License
