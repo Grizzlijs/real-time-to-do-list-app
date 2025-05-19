@@ -8,12 +8,22 @@ import { useTodo } from '../context/TodoContext';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { Task } from '../types';
 
-// This fixes the defaultProps warning with react-beautiful-dnd
-const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
+// Fix for React 18 Strict Mode and react-beautiful-dnd
+// Uses JavaScript default parameters instead of defaultProps
+const StrictModeDroppable = ({
+  children,
+  droppableId,
+  type = 'DEFAULT',
+  direction = 'vertical',
+  ignoreContainerClipping = false,
+  isDropDisabled = false,
+  isCombineEnabled = false,
+  mode = 'standard',
+}: DroppableProps) => {
   const [enabled, setEnabled] = useState(false);
   
   React.useEffect(() => {
-    // This is a workaround for React 18 Strict Mode
+    // Wait until after client-side hydration to enable
     const animation = requestAnimationFrame(() => setEnabled(true));
     return () => {
       cancelAnimationFrame(animation);
@@ -25,7 +35,19 @@ const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
     return null;
   }
   
-  return <Droppable {...props}>{children}</Droppable>;
+  return (
+    <Droppable
+      droppableId={droppableId}
+      type={type}
+      direction={direction}
+      ignoreContainerClipping={ignoreContainerClipping}
+      isDropDisabled={isDropDisabled}
+      isCombineEnabled={isCombineEnabled}
+      mode={mode}
+    >
+      {children}
+    </Droppable>
+  );
 };
 
 const TaskList: React.FC = () => {

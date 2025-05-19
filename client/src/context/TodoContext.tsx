@@ -50,7 +50,9 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
 
   // Initialize socket connection when component mounts
   useEffect(() => {
-    socketService.initSocket();
+    const socket = socketService.initSocket();
+    console.log('Socket initialized in TodoContext');
+    
     return () => {
       socketService.disconnectSocket();
     };
@@ -59,18 +61,25 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   // Set up socket event listeners
   useEffect(() => {
     if (currentList) {
+      console.log(`Joining list room for list ID: ${currentList.id}`);
       // Join list room
       socketService.joinList(currentList.id);
 
       // Task created by another user
       socketService.onTaskCreated(({ listId, task }) => {
+        console.log(`Received task-created event for list ${listId}`, task);
         if (currentList.id === listId) {
-          setTasks(prevTasks => [...prevTasks, task]);
+          // Check if task already exists to prevent duplicates
+          setTasks(prevTasks => {
+            const exists = prevTasks.some(t => t.id === task.id);
+            return exists ? prevTasks : [...prevTasks, task];
+          });
         }
       });
 
       // Task updated by another user
       socketService.onTaskUpdated(({ listId, task }) => {
+        console.log(`Received task-updated event for list ${listId}`, task);
         if (currentList.id === listId) {
           setTasks(prevTasks => 
             prevTasks.map(t => t.id === task.id ? task : t)
@@ -80,6 +89,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
 
       // Task deleted by another user
       socketService.onTaskDeleted(({ listId, taskId }) => {
+        console.log(`Received task-deleted event for list ${listId}`, taskId);
         if (currentList.id === listId) {
           setTasks(prevTasks => prevTasks.filter(t => t.id !== taskId));
         }
@@ -87,6 +97,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
 
       // Tasks reordered by another user
       socketService.onTasksReordered(({ listId, tasks: updatedTasks }) => {
+        console.log(`Received tasks-reordered event for list ${listId}`, { count: updatedTasks.length });
         if (currentList.id === listId) {
           setTasks(updatedTasks);
         }
@@ -95,6 +106,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
 
     return () => {
       if (currentList) {
+        console.log(`Leaving list room for list ID: ${currentList.id}`);
         socketService.leaveList(currentList.id);
       }
       socketService.offAllListeners();

@@ -7,8 +7,32 @@ let socket: Socket;
 
 export const initSocket = (): Socket => {
   if (!socket) {
-    socket = io(SOCKET_URL);
-    console.log('Socket initialized');
+    console.log('Connecting to socket server at:', SOCKET_URL);
+    socket = io(SOCKET_URL, { 
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000
+    });
+    
+    socket.on('connect', () => {
+      console.log('Socket connected successfully with ID:', socket.id);
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+    
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+    });
+    
+    socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`Socket reconnection attempt #${attemptNumber}`);
+    });
+    
+    socket.on('reconnect_failed', () => {
+      console.error('Socket failed to reconnect after multiple attempts');
+    });
   }
   return socket;
 };
