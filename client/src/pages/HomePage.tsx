@@ -29,21 +29,32 @@ const HomePage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [heroAnimationComplete, setHeroAnimationComplete] = useState(false);
   const [isEasterEggOpen, setIsEasterEggOpen] = useState(false);
-  const [isFireworksActive, setIsFireworksActive] = useState(false);
   const [isGiftOpen, setIsGiftOpen] = useState(false);
-
+  const [lidRotation, setLidRotation] = useState(0);
+  
   const handleOpenEasterEgg = () => {
     setIsEasterEggOpen(true);
-    // Trigger fireworks
-    setTimeout(() => setIsFireworksActive(true), 300);
-    // Trigger gift opening after fireworks
-    setTimeout(() => setIsGiftOpen(true), 1500);
+    // Reset states
+    setIsGiftOpen(false);
+    setLidRotation(0);
+    
+    // Start lid opening animation
+    const interval = setInterval(() => {
+      setLidRotation(prev => {
+        if (prev < 70) return prev + 5;
+        clearInterval(interval);
+        return 70;
+      });
+    }, 100);
+    
+    // Trigger gift opening after animation
+    setTimeout(() => setIsGiftOpen(true), 2000);
   };
 
   const handleCloseEasterEgg = () => {
     setIsEasterEggOpen(false);
-    setIsFireworksActive(false);
     setIsGiftOpen(false);
+    setLidRotation(0);
   };
 
   useEffect(() => {
@@ -285,7 +296,7 @@ const HomePage: React.FC = () => {
           </Grid>
         </Container>
       </Box>
-    
+      
       
       {/* Combined Features Section */}
       <Box sx={{ 
@@ -293,147 +304,147 @@ const HomePage: React.FC = () => {
         background: 'linear-gradient(180deg, #fff 0%, rgba(5, 89, 201, 0.03) 100%)'
       }}>
         <Container maxWidth="lg">      
-          <Box textAlign="center" mb={8}>
-            <Typography 
-              variant="h2" 
-              component="h2" 
-              sx={{ 
+        <Box textAlign="center" mb={8}>
+          <Typography 
+            variant="h2" 
+            component="h2" 
+            sx={{ 
                 mb: 3,
-                fontWeight: 700,
+              fontWeight: 700,
                 background: 'linear-gradient(45deg, #172B4D 30%, #0559C9 90%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
               Powerful Features, Simple Experience
-            </Typography>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                maxWidth: 700, 
-                mx: 'auto', 
-                color: 'text.secondary',
-                fontWeight: 400,
+          </Typography>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              maxWidth: 700, 
+              mx: 'auto', 
+              color: 'text.secondary',
+              fontWeight: 400,
                 mb: 6
+            }}
+          >
+              Everything you need to manage tasks efficiently and collaborate seamlessly
+          </Typography>
+        </Box>
+      
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={4}>
+            <Card 
+              elevation={2} 
+              sx={{ 
+                height: '100%', 
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  transition: 'transform 0.3s, box-shadow 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 16px 32px rgba(0,0,0,0.1)'
+                }
               }}
             >
-              Everything you need to manage tasks efficiently and collaborate seamlessly
-            </Typography>
-          </Box>
-        
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={4}>
-              <Card 
-                elevation={2} 
+              <CardMedia
+                component="div"
                 sx={{ 
-                  height: '100%', 
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  transition: 'transform 0.3s, box-shadow 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: '0 16px 32px rgba(0,0,0,0.1)'
-                  }
+                    height: 180, 
+                  background: 'linear-gradient(135deg, #4B96FF 0%, #0559C9 100%)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
                 }}
               >
-                <CardMedia
-                  component="div"
-                  sx={{ 
-                    height: 180, 
-                    background: 'linear-gradient(135deg, #4B96FF 0%, #0559C9 100%)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                  }}
-                >
                   <CheckCircleIcon sx={{ fontSize: 64, color: '#fff' }} />
-                </CardMedia>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
-                    Track Completion
-                  </Typography>
+              </CardMedia>
+              <CardContent sx={{ p: 3 }}>
+                <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
+                  Track Completion
+                </Typography>
                   <Typography variant="body1" color="text.secondary">
-                    Easily mark tasks as completed, filter by status, and keep track of your team's progress in real-time.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} md={4}>
-              <Card 
-                elevation={2}
-                sx={{ 
-                  height: '100%',
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  transition: 'transform 0.3s, box-shadow 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: '0 16px 32px rgba(0,0,0,0.1)'
-                  }
-                }}
-              >
-                <CardMedia
-                  component="div"
-                  sx={{ 
-                    height: 180, 
-                    background: 'linear-gradient(135deg, #0559C9 0%, #003B8E 100%)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                  }}
-                >
-                  <GroupIcon sx={{ fontSize: 64, color: '#fff' }} />
-                </CardMedia>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
-                    Real-Time Collaboration
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    Work together seamlessly with your team members. All changes appear instantly for everyone connected to the list.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} md={4}>
-              <Card 
-                elevation={2}
-                sx={{ 
-                  height: '100%',
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  transition: 'transform 0.3s, box-shadow 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: '0 16px 32px rgba(0,0,0,0.1)'
-                  }
-                }}
-              >
-                <CardMedia
-                  component="div"
-                  sx={{ 
-                    height: 180, 
-                    background: 'linear-gradient(135deg, #003B8E 0%, #001E3C 100%)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                  }}
-                >
-                  <DragIndicatorIcon sx={{ fontSize: 64, color: '#fff' }} />
-                </CardMedia>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
-                    Drag & Drop Reordering
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    Easily prioritize tasks by dragging and dropping them into your preferred order. Changes sync instantly across devices.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+                  Easily mark tasks as completed, filter by status, and keep track of your team's progress in real-time.
+                </Typography>
+              </CardContent>
+            </Card>
           </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Card 
+              elevation={2}
+              sx={{ 
+                height: '100%',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  transition: 'transform 0.3s, box-shadow 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 16px 32px rgba(0,0,0,0.1)'
+                }
+              }}
+            >
+              <CardMedia
+                component="div"
+                sx={{ 
+                    height: 180, 
+                  background: 'linear-gradient(135deg, #0559C9 0%, #003B8E 100%)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}
+              >
+                  <GroupIcon sx={{ fontSize: 64, color: '#fff' }} />
+              </CardMedia>
+              <CardContent sx={{ p: 3 }}>
+                <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
+                  Real-Time Collaboration
+                </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                  Work together seamlessly with your team members. All changes appear instantly for everyone connected to the list.
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Card 
+              elevation={2}
+              sx={{ 
+                height: '100%',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  transition: 'transform 0.3s, box-shadow 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 16px 32px rgba(0,0,0,0.1)'
+                }
+              }}
+            >
+              <CardMedia
+                component="div"
+                sx={{ 
+                    height: 180, 
+                  background: 'linear-gradient(135deg, #003B8E 0%, #001E3C 100%)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}
+              >
+                  <DragIndicatorIcon sx={{ fontSize: 64, color: '#fff' }} />
+              </CardMedia>
+              <CardContent sx={{ p: 3 }}>
+                <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
+                  Drag & Drop Reordering
+                </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                  Easily prioritize tasks by dragging and dropping them into your preferred order. Changes sync instantly across devices.
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
 
           <Grid container spacing={5} mt={6}>
             <Grid item xs={12} sm={6} md={3}>
@@ -463,11 +474,11 @@ const HomePage: React.FC = () => {
                 </Box>
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
                   Cross-Device Sync
-                </Typography>
+            </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Access your tasks from any device with real-time synchronization
-                </Typography>
-              </Box>
+            </Typography>
+          </Box>
             </Grid>
             
             <Grid item xs={12} sm={6} md={3}>
@@ -615,19 +626,19 @@ const HomePage: React.FC = () => {
         
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ textAlign: 'center', mb: 7 }}>
-            <Typography 
-              variant="h3" 
-              component="h2" 
-              sx={{ 
+        <Typography 
+          variant="h3" 
+          component="h2" 
+          sx={{ 
                 position: 'relative',
                 display: 'inline-block',
-                textAlign: 'center', 
+            textAlign: 'center', 
                 mb: 1, 
                 fontWeight: 800,
                 background: 'linear-gradient(45deg, #172B4D 30%, #0559C9 90%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
                 '&::after': {
                   content: '""',
                   position: 'absolute',
@@ -639,10 +650,10 @@ const HomePage: React.FC = () => {
                   borderRadius: '2px',
                   background: 'linear-gradient(90deg, #0559C9 0%, #78A9FF 100%)',
                 }
-              }}
-            >
-              Your To-Do Lists
-            </Typography>
+          }}
+        >
+          Your To-Do Lists
+        </Typography>
             
             <Typography
               variant="body1"
@@ -661,7 +672,7 @@ const HomePage: React.FC = () => {
             </Typography>
           </Box>
 
-          {isLoading ? (
+        {isLoading ? (
             <Box 
               sx={{ 
                 textAlign: 'center', 
@@ -676,8 +687,8 @@ const HomePage: React.FC = () => {
               <Typography sx={{ mt: 3, color: 'text.secondary', fontWeight: 500 }}>
                 Loading your lists...
               </Typography>
-            </Box>
-          ) : lists.length > 0 ? (
+          </Box>
+        ) : lists.length > 0 ? (
             <Grid 
               container 
               spacing={4} 
@@ -694,21 +705,21 @@ const HomePage: React.FC = () => {
                 }
               }}
             >
-              {lists.map(list => (
-                <Grid item xs={12} sm={6} md={4} key={list.id}>
-                  <Paper
+            {lists.map(list => (
+              <Grid item xs={12} sm={6} md={4} key={list.id}>
+                <Paper
                     elevation={0}
-                    sx={{
+                  sx={{
                       p: 0,
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       borderRadius: '20px',
                       border: '1px solid rgba(0,0,0,0.05)',
                       background: 'linear-gradient(135deg, #ffffff 0%, #f9fbff 100%)',
                       overflow: 'hidden',
-                      '&:hover': {
+                    '&:hover': {
                         transform: 'translateY(-12px)',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
                         border: '1px solid rgba(5, 89, 201, 0.1)',
@@ -723,12 +734,12 @@ const HomePage: React.FC = () => {
                           background: 'linear-gradient(90deg, #0451B5 0%, #0066DB 100%)',
                           transform: 'translateY(-2px)',
                         }
-                      }
-                    }}
-                    component={Link}
-                    to={`/list/${list.slug}`}
-                    style={{ textDecoration: 'none', color: 'inherit' }}
-                  >
+                    }
+                  }}
+                  component={Link}
+                  to={`/list/${list.slug}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
                     <Box 
                       className="list-header"
                       sx={{ 
@@ -740,10 +751,10 @@ const HomePage: React.FC = () => {
                         transition: 'all 0.3s ease',
                       }}
                     >
-                      <Avatar 
+                    <Avatar 
                         className="list-avatar"
-                        sx={{ 
-                          bgcolor: 'primary.main',
+                      sx={{ 
+                        bgcolor: 'primary.main', 
                           background: 'linear-gradient(135deg, #0559C9 0%, #0078FF 100%)', 
                           width: 52, 
                           height: 52,
@@ -753,15 +764,15 @@ const HomePage: React.FC = () => {
                         }}
                       >
                         <ListIcon sx={{ fontSize: 24 }} />
-                      </Avatar>
+                    </Avatar>
                       <Box>
                         <Typography variant="h6" component="h3" noWrap sx={{ fontWeight: 700 }}>
-                          {list.title}
-                        </Typography>
+                      {list.title}
+                    </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                           Created {new Date(list.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric', 
-                            month: 'short', 
+                      year: 'numeric', 
+                      month: 'short', 
                             day: 'numeric'
                           })}
                         </Typography>
@@ -820,9 +831,9 @@ const HomePage: React.FC = () => {
                             mr: 0.75
                           }} />
                           {new Date(list.created_at).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                         </Typography>
                       </Box>
                       
@@ -836,41 +847,41 @@ const HomePage: React.FC = () => {
                         }}
                       >
                         Click to view tasks and collaborate with your team
-                      </Typography>
-                      
-                      <Button
-                        variant="contained"
-                        size="medium"
+                  </Typography>
+                  
+                  <Button
+                    variant="contained"
+                    size="medium"
                         className="open-button"
-                        sx={{ 
+                    sx={{ 
                           mt: 3, 
-                          alignSelf: 'flex-start',
+                      alignSelf: 'flex-start',
                           borderRadius: '12px',
                           background: 'linear-gradient(90deg, #0559C9 0%, #0078FF 100%)',
                           py: 1,
                           px: 3,
-                          boxShadow: '0 4px 8px rgba(5, 89, 201, 0.2)',
+                      boxShadow: '0 4px 8px rgba(5, 89, 201, 0.2)',
                           transition: 'all 0.3s ease',
-                        }}
-                        endIcon={<ArrowForwardIcon />}
-                      >
-                        Open List
-                      </Button>
+                    }}
+                    endIcon={<ArrowForwardIcon />}
+                  >
+                    Open List
+                  </Button>
                     </Box>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          ) : (
-            <Paper 
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Paper 
               elevation={0} 
-              sx={{ 
+            sx={{ 
                 p: { xs: 4, md: 6 }, 
                 bgcolor: 'rgba(255,255,255,0.9)', 
-                textAlign: 'center', 
+              textAlign: 'center', 
                 borderRadius: '28px',
-                maxWidth: 700,
-                mx: 'auto',
+              maxWidth: 700,
+              mx: 'auto',
                 border: '1px solid rgba(0,0,0,0.05)',
                 boxShadow: '0 30px 60px rgba(0,0,0,0.05)',
                 position: 'relative',
@@ -910,34 +921,34 @@ const HomePage: React.FC = () => {
                     border: '1px dashed rgba(5, 89, 201, 0.2)',
                     animation: 'spin 30s linear infinite',
                   },
-                }}
-              >
-                <img 
-                  src={`${process.env.PUBLIC_URL}/logo512.png`} 
-                  alt="Logo" 
-                  style={{ 
+            }}
+          >
+            <img 
+              src={`${process.env.PUBLIC_URL}/logo512.png`} 
+              alt="Logo" 
+              style={{ 
                     width: 90, 
                     height: 90, 
-                    opacity: 0.8 
-                  }} 
-                />
+                opacity: 0.8 
+              }} 
+            />
               </Box>
               <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>
-                You don't have any lists yet
-              </Typography>
+              You don't have any lists yet
+            </Typography>
               <Typography variant="body1" sx={{ mb: 5, color: 'text.secondary', maxWidth: '80%', mx: 'auto' }}>
-                Create your first list to start organizing tasks and collaborating with your team
-              </Typography>
-              <Button
-                component={Link}
-                to="/create"
-                variant="contained"
-                color="primary"
-                size="large"
-                startIcon={<AddIcon />}
-                sx={{ 
-                  py: 1.5, 
-                  px: 4,
+              Create your first list to start organizing tasks and collaborating with your team
+            </Typography>
+            <Button
+              component={Link}
+              to="/create"
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={<AddIcon />}
+              sx={{ 
+                py: 1.5, 
+                px: 4,
                   borderRadius: '14px',
                   background: 'linear-gradient(90deg, #0559C9 0%, #0078FF 100%)',
                   boxShadow: '0 8px 16px rgba(5, 89, 201, 0.2)',
@@ -947,13 +958,13 @@ const HomePage: React.FC = () => {
                     boxShadow: '0 12px 20px rgba(5, 89, 201, 0.3)',
                     background: 'linear-gradient(90deg, #0451B5 0%, #0066DB 100%)',
                   }
-                }}
-              >
-                Create Your First List
-              </Button>
-            </Paper>
-          )}
-        </Container>
+              }}
+            >
+              Create Your First List
+            </Button>
+          </Paper>
+        )}
+      </Container>
       </Box>
       
       {/* Get Started section - Modernized */}
@@ -1007,8 +1018,8 @@ const HomePage: React.FC = () => {
                       textShadow: '0 2px 10px rgba(0,0,0,0.2)',
                     }}
                   >
-                    Get Started with TaskSync
-                  </Typography>
+                Get Started with TaskSync
+              </Typography>
                   <Typography 
                     variant="body1" 
                     sx={{ 
@@ -1019,69 +1030,69 @@ const HomePage: React.FC = () => {
                       maxWidth: '90%'
                     }}
                   >
-                    Start by creating a new list, add your tasks, and share the unique URL with your team members for seamless collaboration.
-                  </Typography>
-                  <Button
-                      component={Link}
-                      to="/create"
+                Start by creating a new list, add your tasks, and share the unique URL with your team members for seamless collaboration.
+              </Typography>
+              <Button 
+                component={Link} 
+                to="/create" 
                       variant="contained"
-                      size="large"
-                      sx={{ 
-                        py: 1.5, 
-                        px: 4,
+                size="large"
+                sx={{ 
+                  py: 1.5, 
+                  px: 4,
                         fontSize: '1rem',
-                        fontWeight: 600,
+                  fontWeight: 600,
                         borderRadius: '12px',
                         background: 'linear-gradient(90deg, #0559C9 0%, #0078FF 100%)',
                         boxShadow: '0 8px 16px rgba(5, 89, 201, 0.3)',
                         transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-3px)',
+                  '&:hover': {
+                    transform: 'translateY(-3px)',
                           boxShadow: '0 12px 20px rgba(5, 89, 201, 0.4)',
                           background: 'linear-gradient(90deg, #0451B5 0%, #0066DB 100%)',
-                        }
-                      }}
-                    >
-                      Create New List
-                    </Button>
+                  }
+                }}
+              >
+                Create New List
+              </Button>
                 </Box>
               </Fade>
             </Grid>
             <Grid item xs={12} md={6}>
               <Zoom in={true} timeout={1000} style={{ transitionDelay: '300ms' }}>
-                <Paper 
+              <Paper 
                   elevation={0} 
-                  sx={{ 
+                sx={{ 
                     p: 4, 
-                    bgcolor: 'rgba(255,255,255,0.05)', 
-                    border: '1px solid rgba(255,255,255,0.1)',
+                  bgcolor: 'rgba(255,255,255,0.05)', 
+                  border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '24px',
-                    backdropFilter: 'blur(10px)',
-                    overflow: 'hidden',
-                    position: 'relative',
+                  backdropFilter: 'blur(10px)',
+                  overflow: 'hidden',
+                  position: 'relative',
                     boxShadow: '0 30px 60px rgba(0,0,0,0.15)'
+                }}
+              >
+                <Box 
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 0,
+                    opacity: 0.4,
+                    background: 'radial-gradient(circle at center, rgba(75,150,255,0.2) 0%, rgba(0,0,0,0) 70%)',
                   }}
-                >
+                />
+                <Box position="relative" zIndex={1}>
                   <Box 
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      zIndex: 0,
-                      opacity: 0.4,
-                      background: 'radial-gradient(circle at center, rgba(75,150,255,0.2) 0%, rgba(0,0,0,0) 70%)',
-                    }}
-                  />
-                  <Box position="relative" zIndex={1}>
-                    <Box 
-                      display="flex" 
-                      alignItems="center" 
-                      justifyContent="center"
-                      flexDirection="column"
-                      textAlign="center"
-                      py={4}
+                    display="flex" 
+                    alignItems="center" 
+                    justifyContent="center"
+                    flexDirection="column"
+                    textAlign="center"
+                    py={4}
                     >
                       <Box
                         sx={{
@@ -1096,29 +1107,29 @@ const HomePage: React.FC = () => {
                           boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
                           border: '1px solid rgba(255,255,255,0.2)',
                         }}
-                      >
-                        <img 
-                          src={`${process.env.PUBLIC_URL}/logo512.png`} 
-                          alt="Logo" 
-                          style={{ 
+                  >
+                    <img 
+                      src={`${process.env.PUBLIC_URL}/logo512.png`} 
+                      alt="Logo" 
+                      style={{ 
                             width: 110, 
                             height: 110,
                             borderRadius: '50%',
-                            filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.3))'
-                          }} 
-                        />
+                        filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.3))'
+                      }} 
+                    />
                       </Box>
                       <Typography variant="h3" sx={{ mb: 2, fontWeight: 700, color: 'white' }}>
-                        TaskSync Pro
-                      </Typography>
+                      TaskSync Pro
+                    </Typography>
                       <Typography variant="body1" sx={{ mb: 4, opacity: 0.9, fontSize: '1.1rem', color: 'white' }}>
-                        Upgrade to Pro for advanced features, unlimited lists, and priority support
-                      </Typography>
-                      <Button 
-                        variant="outlined" 
-                        color="inherit"
+                      Upgrade to Pro for advanced features, unlimited lists, and priority support
+                    </Typography>
+                    <Button 
+                      variant="outlined" 
+                      color="inherit"
                         onClick={handleOpenEasterEgg}
-                        sx={{ 
+                      sx={{ 
                           py: 1.5,
                           px: 4,
                           borderRadius: '12px',
@@ -1126,18 +1137,18 @@ const HomePage: React.FC = () => {
                           color: 'white',
                           borderColor: 'rgba(255,255,255,0.3)',
                           transition: 'all 0.3s ease',
-                          '&:hover': {
-                            borderColor: 'white',
-                            backgroundColor: 'rgba(255,255,255,0.1)',
+                        '&:hover': {
+                          borderColor: 'white',
+                          backgroundColor: 'rgba(255,255,255,0.1)',
                             transform: 'translateY(-3px)',
-                          }
-                        }}
-                      >
-                        Explore Pro Features
-                      </Button>
-                    </Box>
+                        }
+                      }}
+                    >
+                      Explore Pro Features
+                    </Button>
                   </Box>
-                </Paper>
+                </Box>
+              </Paper>
               </Zoom>
             </Grid>
           </Grid>
@@ -1148,8 +1159,8 @@ const HomePage: React.FC = () => {
       <ProFeaturesModal 
         open={isEasterEggOpen} 
         onClose={handleCloseEasterEgg} 
-        isFireworksActive={isFireworksActive} 
         isGiftOpen={isGiftOpen}
+        lidRotation={lidRotation}
       />
     </>
   );
@@ -1260,9 +1271,9 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ size, thickness }) 
 const ProFeaturesModal: React.FC<{
   open: boolean;
   onClose: () => void;
-  isFireworksActive: boolean;
   isGiftOpen: boolean;
-}> = ({ open, onClose, isFireworksActive, isGiftOpen }) => {
+  lidRotation: number;
+}> = ({ open, onClose, isGiftOpen, lidRotation }) => {
   return (
     <Modal
       open={open}
@@ -1275,7 +1286,7 @@ const ProFeaturesModal: React.FC<{
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: { xs: '90%', sm: '80%', md: 1080 },
+        width: { xs: '90%', sm: '80%', md: 900 },
         maxHeight: '90vh',
         bgcolor: 'background.paper',
         borderRadius: 4,
@@ -1283,46 +1294,8 @@ const ProFeaturesModal: React.FC<{
         p: 0,
         outline: 'none',
         overflow: 'hidden',
+        zIndex: 1200,
       }}>
-        {/* Fireworks Container */}
-        {isFireworksActive && (
-          <Box sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-            zIndex: 10,
-          }}>
-            {/* Generate multiple fireworks */}
-            {[...Array(10)].map((_, i) => (
-              <Box
-                key={i}
-                sx={{
-                  position: 'absolute',
-                  top: `${Math.random() * 100}%`,
-                  left: `${Math.random() * 100}%`,
-                  width: Math.random() * 10 + 20,
-                  height: Math.random() * 10 + 20,
-                  borderRadius: '50%',
-                  background: `radial-gradient(circle, 
-                    ${['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'][Math.floor(Math.random() * 6)]} 0%, 
-                    rgba(255,255,255,0) 70%)`,
-                  boxShadow: `0 0 30px ${['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'][Math.floor(Math.random() * 6)]}`,
-                  animation: `firework-${i} 1s ease-out forwards`,
-                  opacity: 0,
-                  '@keyframes firework-${i}': {
-                    '0%': { transform: 'scale(0)', opacity: 0 },
-                    '50%': { transform: 'scale(1)', opacity: 1 },
-                    '100%': { transform: 'scale(1.5)', opacity: 0 },
-                  }
-                }}
-              />
-            ))}
-          </Box>
-        )}
-        
         {/* Close button */}
         <IconButton
           aria-label="close"
@@ -1348,7 +1321,7 @@ const ProFeaturesModal: React.FC<{
         }}>
           {/* Gift Animation */}
           <Box sx={{
-            height: 120,
+            height: 150,
             background: 'linear-gradient(135deg, #001E3C 0%, #0559C9 100%)',
             display: 'flex',
             justifyContent: 'center',
@@ -1389,16 +1362,9 @@ const ProFeaturesModal: React.FC<{
                 background: 'linear-gradient(135deg, #ff6666 0%, #e60000 100%)',
                 borderRadius: 2,
                 boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
-                transformOrigin: 'bottom center',
-                animation: 'lid-wiggle 3s ease-in-out infinite',
-                '@keyframes lid-wiggle': {
-                  '0%': { transform: 'rotateX(0deg)' },
-                  '5%': { transform: 'rotateX(15deg)' },
-                  '10%': { transform: 'rotateX(0deg)' },
-                  '15%': { transform: 'rotateX(15deg)' },
-                  '20%': { transform: 'rotateX(0deg)' },
-                  '100%': { transform: 'rotateX(0deg)' },
-                }
+                transformOrigin: 'bottom',
+                transform: `rotateX(${lidRotation}deg)`,
+                transition: 'transform 0.2s ease-out'
               }} />
               
               {/* Gift ribbon */}
@@ -1442,7 +1408,37 @@ const ProFeaturesModal: React.FC<{
                 boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
                 transform: 'rotate(-45deg)',
               }} />
+              
+              {/* Gift opening glow */}
+              {lidRotation > 50 && (
+                <Box sx={{
+                  position: 'absolute',
+                  top: '20%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(255,221,68,0.8) 0%, rgba(255,221,68,0) 70%)',
+                  animation: 'gift-glow 0.8s ease-out forwards',
+                  '@keyframes gift-glow': {
+                    '0%': { 
+                      opacity: 0,
+                      transform: 'translate(-50%, -50%) scale(0.2)',
+                    },
+                    '50%': { 
+                      opacity: 1,
+                      transform: 'translate(-50%, -50%) scale(1)',
+                    },
+                    '100%': { 
+                      opacity: 0,
+                      transform: 'translate(-50%, -50%) scale(2)',
+                    },
+                  }
+                }} />
+              )}
             </Box>
+            
             
             {/* Text that appears after gift opens */}
             {isGiftOpen && (
@@ -1453,14 +1449,14 @@ const ProFeaturesModal: React.FC<{
                   fontWeight: 700,
                   textAlign: 'center',
                   textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-                  animation: 'fade-in 1s forwards',
+                  animation: 'fade-in 0.5s forwards',
                   '@keyframes fade-in': {
-                    '0%': { opacity: 0, transform: 'translateY(20px)' },
+                    '0%': { opacity: 0, transform: 'translateY(10px)' },
                     '100%': { opacity: 1, transform: 'translateY(0)' },
                   }
                 }}
               >
-                Meet Our Pro Developer
+                Meet Our Developer
               </Typography>
             )}
           </Box>
@@ -1469,9 +1465,9 @@ const ProFeaturesModal: React.FC<{
           {isGiftOpen && (
             <Box sx={{
               p: 4,
-              animation: 'slide-up 0.8s forwards',
+              animation: 'slide-up 0.5s forwards',
               '@keyframes slide-up': {
-                '0%': { opacity: 0, transform: 'translateY(50px)' },
+                '0%': { opacity: 0, transform: 'translateY(20px)' },
                 '100%': { opacity: 1, transform: 'translateY(0)' },
               }
             }}>
@@ -1549,7 +1545,7 @@ const ProFeaturesModal: React.FC<{
                     I have cultivated a deep technical expertise that evolved from early passion into a professional career.
                   </Typography>
                   <Typography variant="body2" paragraph>
-                    Currently serving as a Front-End Architect at The Customization Group, I specialize in JavaScript, 
+                    I specialize in JavaScript, 
                     NodeJS, TypeScript, and modern web technologies with extensive experience in AI technologies integration.
                   </Typography>
                   
