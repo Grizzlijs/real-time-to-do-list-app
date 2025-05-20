@@ -69,6 +69,55 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<OnlineUser | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
+  // Socket event handlers
+  const handleTaskCreated = useCallback((data: { listId: number; task: Task }) => {
+    console.log('Received task-created event for list', data.listId, data.task);
+    if (currentList && currentList.id === data.listId) {
+      setTasks(prevTasks => {
+        // Check if task already exists
+        const taskExists = prevTasks.some(task => task.id === data.task.id);
+        if (taskExists) {
+          console.log('Task already exists in state from socket event, skipping update', data.task.id);
+          return prevTasks;
+        }
+        console.log('Adding new task from socket event', data.task);
+        return [...prevTasks, data.task];
+      });
+    }
+  }, [currentList]);
+
+  const handleTaskUpdated = useCallback((data: { listId: number; task: Task }) => {
+    console.log('Received task-updated event for list', data.listId, data.task);
+    if (currentList && currentList.id === data.listId) {
+      setTasks(prevTasks => {
+        const taskExists = prevTasks.some(task => task.id === data.task.id);
+        if (taskExists) {
+          console.log('Updating existing task from socket event', data.task);
+          return prevTasks.map(task =>
+            task.id === data.task.id ? { ...task, ...data.task } : task
+          );
+        }
+        console.log('Task not found for update, adding it', data.task.id);
+        return [...prevTasks, data.task];
+      });
+    }
+  }, [currentList]);
+
+  const handleTaskDeleted = useCallback((data: { listId: number; taskId: number }) => {
+    console.log('Received task-deleted event for list', data.listId, data);
+    if (currentList && currentList.id === data.listId) {
+      setTasks(prevTasks => {
+        const taskExists = prevTasks.some(task => task.id === data.taskId);
+        if (taskExists) {
+          console.log('Removing task from socket event', data.taskId);
+          return prevTasks.filter(task => task.id !== data.taskId);
+        }
+        console.log('Task already removed, no action needed', data.taskId);
+        return prevTasks;
+      });
+    }
+  }, [currentList]);
+
   // Initialize socket connection when component mounts
   useEffect(() => {
     console.log('Initializing socket connection in TodoContext');
@@ -135,20 +184,9 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       }
 
       // Task created by another user
-      socketService.onTaskCreated(({ listId, task }) => {
-        console.log(`Received task-created event for list ${listId}`, task);
-        if (currentList && currentList.id === Number(listId)) {
-          setTasks(prevTasks => {
-            const exists = prevTasks.some(t => t.id === task.id);
-            if (exists) {
-              console.log('Task already exists, skipping update', task.id);
-              return prevTasks;
-            }
-            console.log('Adding new task from socket event', task);
-            return [...prevTasks, task];
-          });
-        }
-      });
+      socketService.onTaskCreated(handleTaskCreated);
+      socketService.onTaskUpdated(handleTaskUpdated);
+      socketService.onTaskDeleted(handleTaskDeleted);
 
       // Task updated by another user
       socketService.onTaskUpdated(({ listId, task }) => {
@@ -228,8 +266,12 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         socketService.offAllListeners();
         setMessages([]); // Clear messages when leaving a list
       }
+      // Clean up socket event listeners
+      socketService.offTaskCreated(handleTaskCreated);
+      socketService.offTaskUpdated(handleTaskUpdated);
+      socketService.offTaskDeleted(handleTaskDeleted);
     };
-  }, [currentList?.id]); // Only re-run when currentList.id changes
+  }, [currentList?.id, handleTaskCreated, handleTaskUpdated, handleTaskDeleted]);
 
   // Calculate filtered tasks based on filter state
   const filteredTasks = tasks.filter(task => {
@@ -327,11 +369,16 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       
       const newTask = await api.createTask(taskData);
       
-      // Update local state
-      setTasks(prevTasks => [...prevTasks, newTask]);
-      
-      // Emit socket event
-      socketService.emitTaskCreate(currentList.id, newTask);
+      // Update local state only if the task doesn't already exist
+      setTasks(prevTasks => {
+        const taskExists = prevTasks.some(task => task.id === newTask.id);
+        if (taskExists) {
+          console.log('Task already exists in state from API response, skipping update', newTask.id);
+          return prevTasks;
+        }
+        console.log('Adding new task to state from API response', newTask);
+        return [...prevTasks, newTask];
+      });
       
       setIsLoading(false);
     } catch (err) {
@@ -651,8 +698,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // Update local state
       setTasks(prevTasks => [...prevTasks, newTask]);
       
-      // Emit socket event
-      socketService.emitTaskCreate(currentList.id, newTask);
+      // No need to emit socket event - server will handle this
       
       setIsLoading(false);
     } catch (err) {

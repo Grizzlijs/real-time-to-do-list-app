@@ -81,24 +81,6 @@ export const setupSocketHandlers = (io: Server) => {
       broadcastUserList(listId);
     });
 
-    // Handle task creation
-    socket.on('task-create', async (data) => {
-      try {
-        const { listId, task } = data;
-        const roomName = `list-${listId}`;
-        
-        console.log(`Received task-create from ${socket.handshake.auth.name} for list ${listId}:`, {
-          task: { id: task.id, title: task.title }
-        });
-        
-        // Broadcast to all clients in the room including the sender
-        io.to(roomName).emit('task-created', { listId, task });
-        console.log(`Broadcasted task-created event to room ${roomName}`);
-      } catch (error) {
-        console.error('Error handling task creation via socket:', error);
-      }
-    });
-
     // Handle task updates (edit, completion, order)
     socket.on('task-update', async (data) => {
       try {

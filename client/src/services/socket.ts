@@ -280,3 +280,21 @@ export const onChatMessage = (callback: (message: ChatMessage) => void): void =>
     socket.on('chat-message', callback);
   }
 };
+
+export const offTaskCreated = (callback: (data: { listId: number; task: Task }) => void): void => {
+  if (socket?.connected) {
+    socket.off('task-created', callback);
+  }
+};
+
+export const offTaskUpdated = (callback: (data: { listId: number; task: Task }) => void): void => {
+  if (socket?.connected) {
+    socket.off('task-updated', callback);
+  }
+};
+
+export const offTaskDeleted = (callback: (data: { listId: number; taskId: number }) => void): void => {
+  if (socket?.connected) {
+    socket.off('task-deleted', callback);
+  }
+};

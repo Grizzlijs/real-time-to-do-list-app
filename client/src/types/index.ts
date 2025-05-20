@@ -3,22 +3,17 @@ export interface TodoList {
   title: string;
   slug: string;
   created_at: string;
+  tasks: Task[];
 }
 
 export interface Task {
   id: number;
-  list_id: number;
   title: string;
-  description?: string;
+  description: string | null;
   is_completed: boolean;
+  list_id: number;
   task_order: number;
-  parent_id?: number | null;
-  cost?: number | null;
-  task_type: 'basic' | 'work-task' | 'food' | string;
-  created_at: string;
-  updated_at: string;
-  subtasks?: Task[]; // Used for frontend rendering
-  totalCost?: number; // Used for frontend calculation
+  subtasks?: Task[];
 }
 
 export interface TaskCreateDTO {
@@ -32,15 +27,22 @@ export interface TaskCreateDTO {
 }
 
 export interface TaskUpdateDTO {
+  id: number;
   title?: string;
-  description?: string;
+  description?: string | null;
   is_completed?: boolean;
   task_order?: number;
   parent_id?: number | null;
-  cost?: number | null;
-  task_type?: string;
 }
 
 export interface ListCreateDTO {
   title: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  content: string;
+  user_id: string;
+  list_id: number;
+  created_at: string;
 }
