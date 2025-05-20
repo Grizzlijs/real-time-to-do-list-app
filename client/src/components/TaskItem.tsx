@@ -1,12 +1,12 @@
 import React, { useState, memo, useEffect, useRef } from 'react';
 import { Task } from '../types';
 import { useTodo } from '../context/TodoContext';
-import { Draggable, DroppableProvided, Droppable } from 'react-beautiful-dnd';
+import { Draggable } from '@hello-pangea/dnd';
 import ReactMarkdown from 'react-markdown';
 import { 
   Box, TextField, Typography, Checkbox, IconButton, Paper, 
   Collapse, Stack, useTheme, Tooltip, Select, MenuItem, FormControl, 
-  InputLabel, Grid, Divider, Card
+  InputLabel, Grid
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -211,16 +211,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
               {...provided.droppableProps}
               sx={{
                 minHeight: '48px',
-                backgroundColor: snapshot.isDraggingOver 
-                  ? 'rgba(25, 118, 210, 0.08)' 
-                  : 'rgba(0, 0, 0, 0.03)',
-                borderRadius: '6px',
-                padding: '8px',
-                mb: 1,
-                border: '1px dashed',
-                borderColor: snapshot.isDraggingOver
-                  ? 'primary.main'
-                  : '#bdbdbd',
                 transition: 'all 0.2s ease',
                 position: 'relative',
                 '&::before': snapshot.isDraggingOver ? {
@@ -442,6 +432,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     <Draggable 
       draggableId={`task-${task.id}`} 
       index={index}
+      isDragDisabled={isSubtask || (task.subtasks && task.subtasks.length > 0)}
     >
       {(provided, snapshot) => {
         // Set the ref for drag-and-drop
@@ -455,7 +446,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
         return (
           <Box 
             ref={setRefs}
-            {...provided.draggableProps}
+            {...(!isSubtask && (!task.subtasks || task.subtasks.length === 0) ? provided.draggableProps : {})}
             sx={{ 
               mb: 1,
               position: 'relative',
@@ -491,31 +482,33 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
               }}
             >
               <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
-                <Box
-                  {...provided.dragHandleProps}
-                  sx={{ 
-                    cursor: 'grab',
-                    display: 'flex',
-                    alignItems: 'center',
-                    color: 'text.secondary',
-                    pr: 0.5,
-                    opacity: 0.5,
-                    '&:hover': { 
-                      opacity: 1,
-                      color: theme.palette.primary.main 
-                    },
-                    '&:active': {
-                      cursor: 'grabbing'
-                    },
-                    touchAction: 'none'
-                  }}
-                  draggable="true"
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('taskId', task.id.toString());
-                  }}
-                >
-                  <DragIndicatorIcon fontSize="small" />
-                </Box>
+                {(!isSubtask && (!task.subtasks || task.subtasks.length === 0)) && (
+                  <Box
+                    {...provided.dragHandleProps}
+                    sx={{ 
+                      cursor: 'grab',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: 'text.secondary',
+                      pr: 0.5,
+                      opacity: 0.5,
+                      '&:hover': { 
+                        opacity: 1,
+                        color: theme.palette.primary.main 
+                      },
+                      '&:active': {
+                        cursor: 'grabbing'
+                      },
+                      touchAction: 'none'
+                    }}
+                    draggable="true"
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('taskId', task.id.toString());
+                    }}
+                  >
+                    <DragIndicatorIcon fontSize="small" />
+                  </Box>
+                )}
                 
                 <Checkbox
                   checked={task.is_completed}

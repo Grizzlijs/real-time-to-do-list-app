@@ -24,7 +24,6 @@ import { useTodo } from '../context/TodoContext';
 import AddIcon from '@mui/icons-material/Add';
 import ListIcon from '@mui/icons-material/List';
 import MenuIcon from '@mui/icons-material/Menu';
-import SettingsIcon from '@mui/icons-material/Settings';
 import UserProfileButton from './UserProfileButton';
 // uuid is used in context but not here
 

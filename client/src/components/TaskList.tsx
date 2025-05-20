@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
-import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton, Tooltip } from '@mui/material';
-import { DragDropContext, Droppable, DropResult, DroppableProps } from 'react-beautiful-dnd';
+import React, { useState, useEffect, memo, useMemo } from 'react';
+import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { DragDropContext, Droppable, DropResult, DroppableProps } from '@hello-pangea/dnd';
 import TaskItem from './TaskItem';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import { useTodo } from '../context/TodoContext';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { Task } from '../types';
 
 // Improved StrictModeDroppable to fix drag and drop issues in React 18
