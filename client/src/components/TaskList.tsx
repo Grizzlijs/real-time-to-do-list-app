@@ -133,10 +133,8 @@ const TaskList: React.FC = () => {
   displayedTasks.sort((a, b) => a.task_order - b.task_order);
   
   return (
-    <Paper elevation={2} sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '75vh' }}>
-      <Typography variant="h5" gutterBottom>
-        {currentList?.title || 'Tasks'}
-      </Typography>
+    <Paper elevation={2} sx={{ p: 3, backgroundColor: '#efefef', minHeight: '75vh', boxShadow: '-1px 2px 11px rgb(0 0 0 / 20%)' }}>
+
       
       {/* Show error if present */}
       {error && <ErrorMessage message={error} />}
@@ -205,7 +203,7 @@ const TaskList: React.FC = () => {
           {/* Task list with drag and drop */}
           <DragDropContext onDragEnd={handleDragEnd}>
             <StrictModeDroppable droppableId="root">
-              {(provided: DroppableProvided) => (
+              {(provided) => (
                 <Box
                   {...provided.droppableProps}
                   ref={provided.innerRef}

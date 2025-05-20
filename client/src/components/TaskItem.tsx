@@ -9,9 +9,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AddIcon from '@mui/icons-material/Add';
-import MoneyIcon from '@mui/icons-material/MonetizationOn';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { StrictModeDroppable } from './TaskList';
+
 
 interface TaskItemProps {
   task: Task;
@@ -217,6 +217,39 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
               )}
               
               <Stack direction="row" spacing={0.5}>
+                {!isSubtask && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    {task.subtasks && task.subtasks.length > 0 && (
+                      <Tooltip title={showSubtasks ? "Hide subtasks" : "Show subtasks"}>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setShowSubtasks(!showSubtasks)}
+                        >
+                          {showSubtasks ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    
+                    {!isAddingSubtask && (
+                      <Tooltip title="Add subtask">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setIsAddingSubtask(true)}
+                          sx={{ 
+                            ml: 'auto',
+                            '&:hover': {
+                              color: theme.palette.success.main,
+                              backgroundColor: 'rgba(0, 200, 83, 0.08)'
+                            }
+                          }}
+                        >
+                          <AddIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                )}
+
                 {!isEditing ? (
                   <>
                     <IconButton size="small" onClick={handleEdit}>
@@ -242,39 +275,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
           
           {subtasks}
           {addSubtaskForm}
-          
-          {!isSubtask && (
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-              {task.subtasks && task.subtasks.length > 0 && (
-                <Tooltip title={showSubtasks ? "Hide subtasks" : "Show subtasks"}>
-                  <IconButton 
-                    size="small" 
-                    onClick={() => setShowSubtasks(!showSubtasks)}
-                  >
-                    {showSubtasks ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-                  </IconButton>
-                </Tooltip>
-              )}
-              
-              {!isAddingSubtask && (
-                <Tooltip title="Add subtask">
-                  <IconButton 
-                    size="small" 
-                    onClick={() => setIsAddingSubtask(true)}
-                    sx={{ 
-                      ml: 'auto',
-                      '&:hover': {
-                        color: theme.palette.success.main,
-                        backgroundColor: 'rgba(0, 200, 83, 0.08)'
-                      }
-                    }}
-                  >
-                    <AddIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-          )}
+        
         </Box>
       )}
     </Draggable>
