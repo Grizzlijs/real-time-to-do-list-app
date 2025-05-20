@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { DragDropContext, Droppable, DropResult, DroppableProps } from 'react-beautiful-dnd';
 import TaskItem from './TaskItem';
@@ -57,7 +57,19 @@ const TaskList: React.FC = () => {
   
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [forceRender, setForceRender] = useState(0); // Force render counter
 
+  // Force component re-render when tasks are updated
+  useEffect(() => {
+    setForceRender(prev => prev + 1);
+  }, [tasks]);
+  
+  // Get hierarchical task structure for display
+  const hierarchicalTasks = useMemo(() => {
+    console.log('Recalculating hierarchical tasks after state change');
+    return getTaskHierarchy();
+  }, [getTaskHierarchy, forceRender]);
+  
   // Handle form submission for creating a new task
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,124 +87,135 @@ const TaskList: React.FC = () => {
   // Handle drag and drop reordering and subtask conversion
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
-    
-    console.log('Drag end:', { 
-      sourceId: source.droppableId, 
-      sourceIndex: source.index, 
-      destId: destination?.droppableId, 
-      destIndex: destination?.index,
-      draggableId 
-    });
 
-    // If dropped outside a droppable area or no change in position
-    if (!destination || 
-        (destination.droppableId === source.droppableId && 
-         destination.index === source.index)) {
+    console.log('DragEnd triggered:', { source, destination, draggableId });
+
+    if (!destination) {
+      console.log('No destination, drag cancelled.');
+      return;
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      console.log('No change in position, drag cancelled.');
       return;
     }
 
     const taskId = parseInt(draggableId.replace('task-', ''));
-
-    // Determine parent IDs for source and destination
-    const isSourceRoot = source.droppableId === 'root';
-    const isDestRoot = destination.droppableId === 'root';
-    
-    const sourceParentId = isSourceRoot 
-      ? null 
-      : parseInt(source.droppableId.replace('subtasks-', ''));
-      
-    const destParentId = isDestRoot 
-      ? null 
-      : parseInt(destination.droppableId.replace('subtasks-', ''));
-    
-    console.log('Moving task:', {
-      taskId,
-      from: isSourceRoot ? 'root' : `parent ${sourceParentId}`,
-      to: isDestRoot ? 'root' : `parent ${destParentId}`,
-      fromIndex: source.index,
-      toIndex: destination.index
-    });
-
-    // Get the task being moved from the full tasks array (not filtered)
     const movedTask = tasks.find(t => t.id === taskId);
+
     if (!movedTask) {
-      console.error('Task not found:', taskId);
+      console.error(`Task with ID ${taskId} not found.`);
       return;
     }
 
-    // CASE 1: Moving between different parents (or between root and a parent)
-    if (sourceParentId !== destParentId) {
-      // Get tasks at the destination level from the full tasks array
-      const destinationTasks = isDestRoot
-        ? tasks.filter(t => !t.parent_id)
-        : tasks.filter(t => t.parent_id === destParentId);
-        
-      console.log('Destination tasks:', destinationTasks.map(t => ({ id: t.id, title: t.title })));
+    console.log('Moved task:', { id: movedTask.id, title: movedTask.title, oldParent: movedTask.parent_id, oldOrder: movedTask.task_order });
 
-      // Calculate new task order at destination
-      const newTaskOrder = [...destinationTasks]
-        .filter(t => t.id !== taskId) // Remove task if it exists at destination
-        .map((t, i) => ({
-          ...t,
-          task_order: i >= destination.index ? i + 2 : i + 1 // Add 1 because DB starts at 1
-        }));
-        
-      // Insert the moved task at the destination position
-      newTaskOrder.splice(destination.index, 0, {
+    const sourceParentId = source.droppableId === 'root' ? null : parseInt(source.droppableId.replace('subtasks-', ''));
+    const destParentId = destination.droppableId === 'root' ? null : parseInt(destination.droppableId.replace('subtasks-', ''));
+    
+    console.log('Parent IDs:', { sourceParentId, destParentId });
+
+    // Force immediate re-render to reflect the pending change
+    setForceRender(prev => prev + 1);
+
+    // Case 1: Task moved to a new parent (or to/from root)
+    if (source.droppableId !== destination.droppableId) {
+      console.log('Task moved to a different parent/level.');
+      
+      // Create an optimistic update for the UI immediately
+      const optimisticTask = {
         ...movedTask,
         parent_id: destParentId,
         task_order: destination.index + 1
-      });
+      };
       
-      console.log('New task order:', newTaskOrder.map(t => ({ id: t.id, order: t.task_order })));
-
-      // First update parent, then update order
+      // First update the task's parent
       updateTaskParent(taskId, destParentId)
         .then(() => {
-          return reorderTasks(newTaskOrder);
+          // Immediately trigger a re-render to show the parent change
+          setForceRender(prev => prev + 1);
+          
+          // After parent update is successful, get the updated tasks at the destination level
+          const tasksAtDestination = tasks
+            .filter(t => t.parent_id === destParentId && t.id !== taskId) // Exclude the moved task as it will be added separately
+            .sort((a, b) => a.task_order - b.task_order);
+          
+          // Create a mutable copy and insert the moved task at the destination index
+          const reorderedDestination = [...tasksAtDestination];
+          reorderedDestination.splice(destination.index, 0, optimisticTask);
+          
+          // Update the task_order property for each task
+          const finalDestination = reorderedDestination.map((t, idx) => ({
+            ...t,
+            task_order: idx + 1,
+            parent_id: destParentId
+          }));
+          
+          console.log('Reordering tasks at destination:', finalDestination.map(t => ({
+            id: t.id, 
+            title: t.title, 
+            order: t.task_order
+          })));
+          
+          // Update the order of tasks at the destination
+          return reorderTasks(finalDestination);
+        })
+        .then(() => {
+          // Force a final re-render after both operations are complete
+          setForceRender(prev => prev + 1);
         })
         .catch(error => {
-          console.error('Error updating task:', error);
+          console.error('Error in handleDragEnd (parent change):', error);
+          // Force re-render even on error to update UI with current state
+          setForceRender(prev => prev + 1);
         });
+    } else { 
+      // Case 2: Task reordered within the same parent (or root)
+      console.log('Task reordered within the same parent/level.');
+      const parentId = sourceParentId; // Same parent
       
-      return;
+      // Get all sibling tasks at this level, including the moved task
+      const allSiblingTasks = tasks
+        .filter(t => t.parent_id === parentId)
+        .sort((a, b) => a.task_order - b.task_order);
+      
+      // Remove the moved task from its current position
+      const siblingTasksWithoutMoved = allSiblingTasks.filter(t => t.id !== taskId);
+      
+      // Create a new array and insert the moved task at the new position
+      const reorderedSiblings = [...siblingTasksWithoutMoved];
+      reorderedSiblings.splice(destination.index, 0, movedTask);
+      
+      // Update the task_order property for each task
+      const tasksToUpdate = reorderedSiblings.map((task, index) => ({
+        ...task,
+        task_order: index + 1,
+        parent_id: parentId
+      }));
+
+      console.log('Tasks to update after same-level reorder:', tasksToUpdate.map(t => ({
+        id: t.id, 
+        title: t.title, 
+        parent: t.parent_id, 
+        order: t.task_order 
+      })));
+      
+      reorderTasks(tasksToUpdate)
+        .then(() => {
+          // Force a re-render after reordering
+          setForceRender(prev => prev + 1);
+        })
+        .catch(error => {
+          console.error('Error in handleDragEnd (same level reorder):', error);
+          // Force re-render even on error
+          setForceRender(prev => prev + 1);
+        });
     }
-    
-    // CASE 2: Reordering within the same parent
-    const sameLevelTasks = isSourceRoot
-      ? tasks.filter(t => !t.parent_id)
-      : tasks.filter(t => t.parent_id === sourceParentId);
-    
-    console.log('Same level tasks:', sameLevelTasks.map(t => ({ id: t.id, title: t.title })));
-    
-    // Create a copy of tasks to reorder
-    const reorderedTasks = [...sameLevelTasks];
-    
-    // Remove the task from its current position
-    const [removedTask] = reorderedTasks.splice(source.index, 1);
-    
-    // Insert it at the destination position
-    reorderedTasks.splice(destination.index, 0, removedTask);
-    
-    // Update the task_order of all affected tasks
-    const tasksWithNewOrder = reorderedTasks.map((task, index) => ({
-      ...task,
-      task_order: index + 1,
-      parent_id: task.parent_id // Preserve parent_id
-    }));
-    
-    console.log('Reordered tasks:', tasksWithNewOrder.map(t => ({ id: t.id, order: t.task_order })));
-    
-    // Call API to update order
-    reorderTasks(tasksWithNewOrder)
-      .catch(error => {
-        console.error('Error reordering tasks:', error);
-      });
   };
 
-  // Get hierarchical task structure for display
-  const hierarchicalTasks = getTaskHierarchy();
-  
   // Filter tasks based on current filter
   let displayedTasks: Task[] = [];
   if (filter === 'all') {

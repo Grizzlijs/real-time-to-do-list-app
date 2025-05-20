@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useEffect } from 'react';
 import { Task } from '../types';
 import { useTodo } from '../context/TodoContext';
 import { Draggable, DroppableProvided } from 'react-beautiful-dnd';
@@ -35,6 +35,18 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const theme = useTheme();
+
+  useEffect(() => {
+    setEditedTitle(task.title);
+    setEditedDescription(task.description || '');
+  }, [task]);
+  
+  useEffect(() => {
+    if (task.subtasks && task.subtasks.length > 0) {
+      console.log(`Task ${task.id} (${task.title}) has ${task.subtasks.length} subtasks:`, 
+        task.subtasks.map(st => ({ id: st.id, title: st.title, order: st.task_order })));
+    }
+  }, [task.id, task.subtasks, task.title]);
 
   const handleToggleComplete = async () => {
     await updateTask(task.id, { is_completed: !task.is_completed });
@@ -102,24 +114,29 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                 padding: '8px',
                 mb: 1,
                 border: '1px dashed #bdbdbd',
-                transition: 'background-color 0.2s ease, border-color 0.2s ease',
                 '&:hover': {
                   backgroundColor: 'rgba(0, 0, 0, 0.06)',
                   borderColor: '#9e9e9e'
                 }
               }}
             >
-              {(task.subtasks || [])
-                .sort((a, b) => a.task_order - b.task_order)
-                .map((subtask, idx) => (
-                  <TaskItem
-                    key={`subtask-${subtask.id}`}
-                    task={subtask}
-                    index={idx}
-                    isSubtask={true}
-                    parentId={task.id}
-                  />
-                ))}
+              {task.subtasks && task.subtasks.length > 0 ? (
+                task.subtasks
+                  .sort((a, b) => a.task_order - b.task_order)
+                  .map((subtask, idx) => (
+                    <TaskItem
+                      key={`subtask-${subtask.id}`}
+                      task={subtask}
+                      index={idx}
+                      isSubtask={true}
+                      parentId={task.id}
+                    />
+                  ))
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ p: 1, textAlign: 'center' }}>
+                  No subtasks yet
+                </Typography>
+              )}
               {provided.placeholder}
             </Box>
           )}
@@ -171,8 +188,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
           sx={{ 
             mb: 1,
             position: 'relative',
-            transform: snapshot.isDragging ? 'scale(1.02)' : 'none',
-            transition: 'transform 0.2s ease',
+
             zIndex: snapshot.isDragging ? 1000 : 'auto'
           }}
         >
@@ -185,8 +201,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
               opacity: task.is_completed ? 0.8 : 1,
               position: 'relative',
               cursor: snapshot.isDragging ? 'grabbing' : 'default',
-              transform: snapshot.isDragging ? 'rotate(1deg)' : 'none',
-              transition: 'all 0.2s ease',
+
               boxShadow: snapshot.isDragging ? 8 : 1,
               minHeight: '48px',
               display: 'flex',
