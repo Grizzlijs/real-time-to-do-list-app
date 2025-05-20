@@ -4,8 +4,10 @@ A modern, full-stack to-do list application with real-time collaboration feature
 
 ## Implemented User Stories
 
-✅ **I as a user can create to-do items, such as a project tasks**
-   - Create tasks with titles, descriptions.
+✅ **I as a user can create specialized to-do items based on task type**
+   - Basic tasks with titles and descriptions
+   - Work tasks with deadline tracking
+   - Food tasks with nutritional information
    - Organize tasks within multiple lists
 
 ✅ **I as another user can collaborate in real-time with user**
@@ -46,7 +48,21 @@ A modern, full-stack to-do list application with real-time collaboration feature
    - Data stored in PostgreSQL database
    - Reliable persistence even after server restarts
 
-## Additional Features
+## Key Features
+
+### Task Types Support
+- **Basic Tasks**: Standard tasks with titles and descriptions
+- **Work Tasks**: 
+  - Deadline tracking with calendar picker
+  - Visual indicators and validations
+  - Blue accent for easy identification
+- **Food Tasks**:
+  - Nutritional information tracking (carbs, protein, fat)
+  - Optional food pictures
+  - Green accent for easy identification
+  - Grid layout for nutrition data
+
+### Additional Features
 
 - **Real-time chat functionality**
   - Chat with other users who are viewing the same list
@@ -54,7 +70,7 @@ A modern, full-stack to-do list application with real-time collaboration feature
 
 - **Modern UI with theme customization**
   - Clean, responsive design
-  - Custom UniFi-inspired theme with carefully selected colors
+  - Custom U-inspired theme with carefully selected colors
 
 - **Username customization**
   - Set your display name for collaborative sessions

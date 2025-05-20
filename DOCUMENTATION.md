@@ -90,10 +90,43 @@ Task descriptions support Markdown formatting using the React Markdown library. 
 
 ### Special Task Types
 
-The application supports different task types with specialized fields:
-- **Basic**: Standard task type
-- **Work-task**: Includes deadline field
-- **Food**: Includes nutritional information fields
+The application supports different task types with specialized fields and validation:
+
+#### Task Types
+1. **Basic Tasks**
+   - Standard task functionality
+   - Supports description and completion status
+   - Can have subtasks like any other type
+
+2. **Work Tasks**
+   - Includes deadline tracking
+   - Required field: `deadline` (DATE)
+   - Visual indicator: Blue left border
+   - Calendar icon with deadline display
+   - Validation ensures deadline is set
+
+3. **Food Tasks**
+   - Tracks nutritional information
+   - Required fields:
+     - `carbohydrate` (g/100g)
+     - `protein` (g/100g)
+     - `fat` (g/100g)
+   - Optional: `picture` URL for food image
+   - Visual indicator: Green left border
+   - Grid layout for nutrition display
+   - Image preview if URL provided
+
+#### Implementation Details
+- **Form Handling**: Both creation and edit forms validate required fields
+- **Type-Safe**: Full TypeScript interfaces for all task types
+- **Real-time Updates**: Special fields sync through Socket.IO
+- **UI/UX**: 
+  - Color-coded borders for quick type identification
+  - Collapsible detailed information
+  - Type-specific input validation
+  - Responsive grid layouts for nutrition data
+- **Database**: Specialized columns with appropriate data types
+- **API Validation**: Server-side checks for required fields
 
 ## WebSocket Events
 

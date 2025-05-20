@@ -11,7 +11,10 @@ A modern, collaborative to-do list application with real-time updates and nested
 - Filter tasks by active/completed status
 - Drag and drop tasks to reorder them or convert them to subtasks
 - Markdown support for task descriptions
-- Special task types (work tasks with deadlines, food items with nutritional info)
+- Specialized task types:
+  - Basic tasks with standard functionality
+  - Work tasks with deadline tracking and calendar
+  - Food tasks with nutritional information and pictures
 - Real-time chat with other online users
 - Responsive design for mobile and desktop
 

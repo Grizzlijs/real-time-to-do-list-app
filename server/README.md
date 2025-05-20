@@ -12,6 +12,11 @@ Backend server for the real-time collaborative to-do list application.
 ## Features
 
 - RESTful API for to-do list management
+- Rich task type support:
+  - Basic tasks with standard fields
+  - Work tasks with deadline field
+  - Food tasks with nutritional information
+  - Field validation per task type
 - Real-time updates via WebSockets (Socket.IO)
 - Database persistence with PostgreSQL
 - Support for nested tasks and task hierarchies
@@ -105,7 +110,12 @@ npm start
 
 - `GET /api/tasks/:listId` - Get tasks for a list
 - `POST /api/tasks` - Create a new task
+  - Supports task types: basic, work-task, food
+  - Validates required fields based on task type
+  - Returns created task with type-specific fields
 - `PUT /api/tasks/:id` - Update a task
+  - Updates type-specific fields if task type changes
+  - Validates required fields for each type
 - `DELETE /api/tasks/:id` - Delete a task
 - `POST /api/tasks/reorder` - Reorder tasks
 
