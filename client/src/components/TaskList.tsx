@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import { DragDropContext, Droppable, DropResult, DroppableProps, DroppableProvided } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, DropResult, DroppableProps } from 'react-beautiful-dnd';
 import TaskItem from './TaskItem';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
@@ -43,7 +43,6 @@ export const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
 
 const TaskList: React.FC = () => {
   const { 
-    currentList, 
     filteredTasks, 
     filter,
     setFilter,
