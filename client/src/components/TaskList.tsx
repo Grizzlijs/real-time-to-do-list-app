@@ -44,6 +44,7 @@ export const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
 const TaskList: React.FC = () => {
   const { 
     filteredTasks, 
+    tasks,
     filter,
     setFilter,
     createTask, 
@@ -55,63 +56,139 @@ const TaskList: React.FC = () => {
   } = useTodo();
   
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   // Handle form submission for creating a new task
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskTitle.trim() === '') return;
     
-    createTask(newTaskTitle);
-    setNewTaskTitle('');
+    setIsAddingTask(true); // Local loading state
+    try {
+      await createTask(newTaskTitle);
+      setNewTaskTitle('');
+    } finally {
+      setIsAddingTask(false);
+    }
   };
 
   // Handle drag and drop reordering and subtask conversion
-  const handleDragEnd = useCallback((result: DropResult) => {
+  const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
     
-    // If dropped outside the list or no change in position
-    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
+    console.log('Drag end:', { 
+      sourceId: source.droppableId, 
+      sourceIndex: source.index, 
+      destId: destination?.droppableId, 
+      destIndex: destination?.index,
+      draggableId 
+    });
+
+    // If dropped outside a droppable area or no change in position
+    if (!destination || 
+        (destination.droppableId === source.droppableId && 
+         destination.index === source.index)) {
       return;
     }
 
-    // Get the task ID from the draggableId (remove the 'task-' prefix)
     const taskId = parseInt(draggableId.replace('task-', ''));
-    
-    // Get the dragged task
-    const draggedTask = filteredTasks.find(task => task.id === taskId);
-    if (!draggedTask) return;
 
-    // Handle subtask conversion (moving to/from subtask position)
-    if (source.droppableId !== destination.droppableId) {
-      // Convert to/from subtask
-      const newParentId = destination.droppableId === 'root' ? null : parseInt(destination.droppableId);
-      updateTaskParent(draggedTask.id, newParentId);
+    // Determine parent IDs for source and destination
+    const isSourceRoot = source.droppableId === 'root';
+    const isDestRoot = destination.droppableId === 'root';
+    
+    const sourceParentId = isSourceRoot 
+      ? null 
+      : parseInt(source.droppableId.replace('subtasks-', ''));
+      
+    const destParentId = isDestRoot 
+      ? null 
+      : parseInt(destination.droppableId.replace('subtasks-', ''));
+    
+    console.log('Moving task:', {
+      taskId,
+      from: isSourceRoot ? 'root' : `parent ${sourceParentId}`,
+      to: isDestRoot ? 'root' : `parent ${destParentId}`,
+      fromIndex: source.index,
+      toIndex: destination.index
+    });
+
+    // Get the task being moved from the full tasks array (not filtered)
+    const movedTask = tasks.find(t => t.id === taskId);
+    if (!movedTask) {
+      console.error('Task not found:', taskId);
       return;
     }
 
-    // Get tasks at the current level
-    const levelTasks = source.droppableId === 'root' 
-      ? filteredTasks.filter(task => !task.parent_id)
-      : filteredTasks.filter(task => task.parent_id === parseInt(source.droppableId));
+    // CASE 1: Moving between different parents (or between root and a parent)
+    if (sourceParentId !== destParentId) {
+      // Get tasks at the destination level from the full tasks array
+      const destinationTasks = isDestRoot
+        ? tasks.filter(t => !t.parent_id)
+        : tasks.filter(t => t.parent_id === destParentId);
+        
+      console.log('Destination tasks:', destinationTasks.map(t => ({ id: t.id, title: t.title })));
 
-    // Create a copy of tasks to modify
-    const tasks = [...levelTasks];
+      // Calculate new task order at destination
+      const newTaskOrder = [...destinationTasks]
+        .filter(t => t.id !== taskId) // Remove task if it exists at destination
+        .map((t, i) => ({
+          ...t,
+          task_order: i >= destination.index ? i + 2 : i + 1 // Add 1 because DB starts at 1
+        }));
+        
+      // Insert the moved task at the destination position
+      newTaskOrder.splice(destination.index, 0, {
+        ...movedTask,
+        parent_id: destParentId,
+        task_order: destination.index + 1
+      });
+      
+      console.log('New task order:', newTaskOrder.map(t => ({ id: t.id, order: t.task_order })));
+
+      // First update parent, then update order
+      updateTaskParent(taskId, destParentId)
+        .then(() => {
+          return reorderTasks(newTaskOrder);
+        })
+        .catch(error => {
+          console.error('Error updating task:', error);
+        });
+      
+      return;
+    }
     
-    // Remove the dragged item
-    const [removed] = tasks.splice(source.index, 1);
+    // CASE 2: Reordering within the same parent
+    const sameLevelTasks = isSourceRoot
+      ? tasks.filter(t => !t.parent_id)
+      : tasks.filter(t => t.parent_id === sourceParentId);
     
-    // Insert the item at the destination position
-    tasks.splice(destination.index, 0, removed);
+    console.log('Same level tasks:', sameLevelTasks.map(t => ({ id: t.id, title: t.title })));
     
-    // Update the task_order property for each task
-    const reorderedTasks = tasks.map((task, index) => ({
+    // Create a copy of tasks to reorder
+    const reorderedTasks = [...sameLevelTasks];
+    
+    // Remove the task from its current position
+    const [removedTask] = reorderedTasks.splice(source.index, 1);
+    
+    // Insert it at the destination position
+    reorderedTasks.splice(destination.index, 0, removedTask);
+    
+    // Update the task_order of all affected tasks
+    const tasksWithNewOrder = reorderedTasks.map((task, index) => ({
       ...task,
-      task_order: index + 1
+      task_order: index + 1,
+      parent_id: task.parent_id // Preserve parent_id
     }));
     
+    console.log('Reordered tasks:', tasksWithNewOrder.map(t => ({ id: t.id, order: t.task_order })));
+    
     // Call API to update order
-    reorderTasks(reorderedTasks);
-  }, [filteredTasks, reorderTasks, updateTaskParent]);
+    reorderTasks(tasksWithNewOrder)
+      .catch(error => {
+        console.error('Error reordering tasks:', error);
+      });
+  };
 
   // Get hierarchical task structure for display
   const hierarchicalTasks = getTaskHierarchy();
@@ -133,8 +210,6 @@ const TaskList: React.FC = () => {
   
   return (
     <Paper elevation={2} sx={{ p: 3, backgroundColor: '#efefef', minHeight: '75vh', boxShadow: '-1px 2px 11px rgb(0 0 0 / 20%)' }}>
-
-      
       {/* Show error if present */}
       {error && <ErrorMessage message={error} />}
       
@@ -153,14 +228,15 @@ const TaskList: React.FC = () => {
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 variant="outlined"
                 size="small"
+                disabled={isAddingTask}
               />
               <Button 
                 type="submit" 
                 variant="contained" 
                 color="primary" 
-                disabled={!newTaskTitle.trim()}
+                disabled={!newTaskTitle.trim() || isAddingTask}
               >
-                Add
+                {isAddingTask ? "Adding..." : "Add"}
               </Button>
             </Stack>
           </form>
@@ -204,12 +280,26 @@ const TaskList: React.FC = () => {
             <StrictModeDroppable droppableId="root">
               {(provided) => (
                 <Box
-                  {...provided.droppableProps}
                   ref={provided.innerRef}
-                  sx={{ 
-                    minHeight: '200px',
-                    willChange: 'contents',
-                    overflowAnchor: 'none'
+                  {...provided.droppableProps}
+                  sx={{
+                    minHeight: '50px',
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      pointerEvents: 'none',
+                      border: '2px dashed transparent',
+                      borderRadius: 1,
+                      transition: 'border-color 0.2s ease'
+                    },
+                    '&:hover::before': {
+                      borderColor: 'primary.main'
+                    }
                   }}
                 >
                   {displayedTasks.length > 0 ? (

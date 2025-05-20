@@ -93,9 +93,18 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         const taskExists = prevTasks.some(task => task.id === data.task.id);
         if (taskExists) {
           console.log('Updating existing task from socket event', data.task);
-          return prevTasks.map(task =>
-            task.id === data.task.id ? { ...task, ...data.task } : task
-          );
+          // Create a new array to trigger re-render
+          const updatedTasks = [...prevTasks];
+          const taskIndex = updatedTasks.findIndex(t => t.id === data.task.id);
+          if (taskIndex !== -1) {
+            // Update the task while preserving its subtasks
+            const existingTask = updatedTasks[taskIndex];
+            updatedTasks[taskIndex] = {
+              ...data.task,
+              subtasks: existingTask.subtasks || []
+            };
+          }
+          return updatedTasks;
         }
         console.log('Task not found for update, adding it', data.task.id);
         return [...prevTasks, data.task];
@@ -356,7 +365,8 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const createTask = async (title: string, parentId?: number | null, cost?: number | null, taskType?: string) => {
     if (!currentList) return;
     
-    setIsLoading(true);
+    // Don't set global loading state which would trigger full page refresh
+    // setIsLoading(true);
     setError(null);
     try {
       const taskData = {
@@ -367,24 +377,47 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         task_type: taskType || 'basic',
       };
       
+      // Make the API call
       const newTask = await api.createTask(taskData);
       
-      // Update local state only if the task doesn't already exist
+      // Update local state with a new array reference to trigger re-render
       setTasks(prevTasks => {
+        // Check if task already exists
         const taskExists = prevTasks.some(task => task.id === newTask.id);
         if (taskExists) {
-          console.log('Task already exists in state from API response, skipping update', newTask.id);
+          console.log('Task already exists in state, skipping update', newTask.id);
           return prevTasks;
         }
-        console.log('Adding new task to state from API response', newTask);
-        return [...prevTasks, newTask];
+
+        const updatedTasks = [...prevTasks];
+        
+        if (parentId) {
+          // Update parent task's subtasks
+          const parentIndex = updatedTasks.findIndex(task => task.id === parentId);
+          if (parentIndex !== -1) {
+            const parentTask = { ...updatedTasks[parentIndex] };
+            if (!parentTask.subtasks) {
+              parentTask.subtasks = [];
+            }
+            parentTask.subtasks.push(newTask);
+            updatedTasks[parentIndex] = parentTask;
+          }
+        } else {
+          // Add as root task
+          updatedTasks.push(newTask);
+        }
+        
+        return updatedTasks;
       });
       
-      setIsLoading(false);
+      // Don't set global loading state
+      // setIsLoading(false);
     } catch (err) {
       console.error('Failed to create task:', err);
       setError('Failed to create task');
-      setIsLoading(false);
+      
+      // Don't set global loading state
+      // setIsLoading(false);
     }
   };
 
@@ -552,11 +585,6 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
           
           // Sort subtasks by order
           parentTask.subtasks.sort((a, b) => a.task_order - b.task_order);
-          
-          // Calculate cost for parent tasks
-          if (task.cost && task.cost > 0) {
-            parentTask.totalCost = (parentTask.totalCost || 0) + task.cost;
-          }
         } else {
           // If parent doesn't exist, treat as root task
           rootTasks.push(taskWithSubtasks);
@@ -568,12 +596,94 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     return rootTasks.sort((a, b) => a.task_order - b.task_order);
   }, [tasks]);
 
-  // Reorder tasks (for drag and drop)
-  const reorderTasks = async (reorderedTasks: Task[]) => {
+  // Update task parent
+  const updateTaskParent = async (taskId: number, newParentId: number | null): Promise<void> => {
     if (!currentList) return;
     
     setError(null);
     try {
+      console.log(`Updating task ${taskId} parent to ${newParentId}`);
+      
+      // Get the task to update
+      const taskToUpdate = tasks.find(t => t.id === taskId);
+      if (!taskToUpdate) {
+        console.error('Task not found:', taskId);
+        return;
+      }
+
+      // Get tasks at the new parent level
+      const siblingTasks = newParentId === null
+        ? tasks.filter(t => !t.parent_id)
+        : tasks.filter(t => t.parent_id === newParentId);
+
+      // Calculate new task order
+      const newTaskOrder = siblingTasks.length + 1;
+      
+      console.log(`Task ${taskId} will be #${newTaskOrder} at ${newParentId === null ? 'root' : 'parent ' + newParentId}`);
+
+      // Optimistically update UI
+      setTasks(prevTasks => {
+        // Create a deep copy of the tasks array
+        const updatedTasks = JSON.parse(JSON.stringify(prevTasks));
+        
+        // Find the task to move
+        const taskIndex = updatedTasks.findIndex((t: Task) => t.id === taskId);
+        if (taskIndex === -1) {
+          console.error('Task not found in state:', taskId);
+          return prevTasks; // No change
+        }
+        
+        // Get the current task with its subtasks
+        const movedTask = updatedTasks[taskIndex];
+        const oldParentId = movedTask.parent_id;
+        
+        // Remove the task from its current position
+        updatedTasks.splice(taskIndex, 1);
+        
+        // Update the moved task with new parent_id
+        movedTask.parent_id = newParentId;
+        movedTask.task_order = newTaskOrder;
+        
+        // Add the task to the end of the array
+        updatedTasks.push(movedTask);
+        
+        console.log(`Task ${taskId} moved from ${oldParentId === null ? 'root' : 'parent ' + oldParentId} to ${newParentId === null ? 'root' : 'parent ' + newParentId}`);
+        
+        return updatedTasks;
+      });
+      
+      // Update on server
+      const updatedTask = await api.updateTask(taskId, { 
+        parent_id: newParentId,
+        task_order: newTaskOrder
+      });
+      console.log('Server updated task:', updatedTask);
+      
+      // Emit socket event for the parent change
+      socketService.emitTaskUpdate(currentList.id, {
+        ...updatedTask,
+        subtasks: taskToUpdate.subtasks // Preserve subtasks in the event
+      });
+      
+      // Return void to match interface
+    } catch (err) {
+      console.error('Failed to update task parent:', err);
+      setError('Failed to update task parent');
+      
+      // Revert optimistic update on failure
+      loadListBySlug(currentList.slug);
+      throw err;
+    }
+  };
+
+  // Reorder tasks (for drag and drop)
+  const reorderTasks = async (reorderedTasks: Task[]): Promise<void> => {
+    if (!currentList) return;
+    
+    setError(null);
+    try {
+      console.log('Reordering tasks:', reorderedTasks.map(t => ({ id: t.id, order: t.task_order, parent: t.parent_id })));
+      
       // Create a copy of the full tasks array
       const allTasks = [...tasks];
       
@@ -588,28 +698,52 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // Update orders in the full task list using the map
       const updatedTasks = allTasks.map(task => {
         if (orderMap.has(task.id)) {
-          return { ...task, task_order: orderMap.get(task.id)! };
+          // This is a task that was reordered
+          return { 
+            ...task, 
+            task_order: orderMap.get(task.id)!,
+            parent_id: reorderedTasks.find(t => t.id === task.id)?.parent_id ?? task.parent_id,
+            subtasks: task.subtasks || [] // Preserve subtasks
+          };
         }
         return task;
       });
       
-      // Sort tasks by their new order
-      updatedTasks.sort((a, b) => a.task_order - b.task_order);
-      
       // Optimistically update UI
-      setTasks(updatedTasks);
+      setTasks(prevTasks => {
+        // Create a deep copy to avoid mutation
+        const newTasks = JSON.parse(JSON.stringify(prevTasks));
+        
+        // Update task orders in the main array
+        reorderedTasks.forEach((task, index) => {
+          const taskIndex = newTasks.findIndex((t: Task) => t.id === task.id);
+          if (taskIndex !== -1) {
+            // Update order and parent
+            newTasks[taskIndex].task_order = index + 1;
+            newTasks[taskIndex].parent_id = task.parent_id;
+          } else {
+            console.warn(`Task ${task.id} not found in state during reorder`);
+          }
+        });
+        
+        console.log('Updated state with new task orders');
+        return newTasks;
+      });
       
       // Prepare data for API
       const taskOrderData = reorderedTasks.map((task, index) => ({
         id: task.id,
         task_order: index + 1,
+        parent_id: task.parent_id
       }));
       
       // Update on server
       await api.updateTasksOrder(currentList.id, taskOrderData);
+      console.log('Server updated task orders');
       
       // Emit socket event with the full updated task list
       socketService.emitTasksReorder(currentList.id, updatedTasks);
+      console.log('Emitted tasks-reorder event');
     } catch (err) {
       console.error('Failed to reorder tasks:', err);
       setError('Failed to reorder tasks');
@@ -625,48 +759,39 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     socketService.emitChatMessage(currentList.id, text);
   };
 
-  // Update task parent
-  const updateTaskParent = async (taskId: number, newParentId: number | null) => {
-    if (!currentList) return;
-    
-    setError(null);
-    try {
-      // Optimistically update UI
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId ? { ...task, parent_id: newParentId } : task
-        )
-      );
-      
-      // Update on server
-      const updatedTask = await api.updateTask(taskId, { parent_id: newParentId });
-      
-      // Emit socket event
-      socketService.emitTaskUpdate(currentList.id, updatedTask);
-    } catch (err) {
-      console.error('Failed to update task parent:', err);
-      setError('Failed to update task');
-      
-      // Revert optimistic update on failure
-      loadListBySlug(currentList.slug);
-    }
-  };
-
   // Update task with any combination of fields
   const updateTask = async (taskId: number, updates: TaskUpdateDTO) => {
     if (!currentList) return;
     
     setError(null);
     try {
-      // Optimistically update UI
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId ? { ...task, ...updates } as Task : task
-        )
-      );
+      // Optimistically update UI with a new array reference
+      setTasks(prevTasks => {
+        const updatedTasks = [...prevTasks];
+        const taskIndex = updatedTasks.findIndex(task => task.id === taskId);
+        
+        if (taskIndex !== -1) {
+          const updatedTask = { ...updatedTasks[taskIndex], ...updates };
+          updatedTasks[taskIndex] = updatedTask as Task;
+        }
+        
+        return updatedTasks;
+      });
       
       // Update on server
       const updatedTask = await api.updateTask(taskId, updates);
+      
+      // Update UI with server response
+      setTasks(prevTasks => {
+        const updatedTasks = [...prevTasks];
+        const taskIndex = updatedTasks.findIndex(task => task.id === taskId);
+        
+        if (taskIndex !== -1) {
+          updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], ...updatedTask } as Task;
+        }
+        
+        return updatedTasks;
+      });
       
       // Emit socket event
       socketService.emitTaskUpdate(currentList.id, updatedTask);
@@ -683,7 +808,8 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const addSubtask = async (parentId: number, title: string) => {
     if (!currentList) return;
     
-    setIsLoading(true);
+    // Don't set global loading state which would trigger full page refresh
+    // setIsLoading(true);
     setError(null);
     try {
       const taskData = {
@@ -695,16 +821,28 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       
       const newTask = await api.createTask(taskData);
       
-      // Update local state
-      setTasks(prevTasks => [...prevTasks, newTask]);
+      // Update local state with a new array reference to trigger re-render
+      setTasks(prevTasks => {
+        const updatedTasks = [...prevTasks];
+        const parentIndex = updatedTasks.findIndex(task => task.id === parentId);
+        
+        if (parentIndex !== -1) {
+          const parentTask = { ...updatedTasks[parentIndex] };
+          parentTask.subtasks = [...(parentTask.subtasks || []), newTask];
+          updatedTasks[parentIndex] = parentTask;
+        }
+        
+        return updatedTasks;
+      });
       
-      // No need to emit socket event - server will handle this
-      
-      setIsLoading(false);
+      // Don't set global loading state
+      // setIsLoading(false);
     } catch (err) {
       console.error('Failed to create subtask:', err);
       setError('Failed to create subtask');
-      setIsLoading(false);
+      // Don't set global loading state
+      // setIsLoading(false);
+      throw err;
     }
   };
 

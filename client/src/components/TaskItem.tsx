@@ -9,6 +9,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AddIcon from '@mui/icons-material/Add';
+import CheckIcon from '@mui/icons-material/Check';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { StrictModeDroppable } from './TaskList';
 
@@ -31,6 +32,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   const [editedDescription, setEditedDescription] = useState(task.description || '');
   const [showSubtasks, setShowSubtasks] = useState(true);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+  const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const theme = useTheme();
 
@@ -62,10 +64,20 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
 
   const handleAddSubtask = async () => {
     if (newSubtaskTitle.trim()) {
-      await addSubtask(task.id, newSubtaskTitle);
-      setNewSubtaskTitle('');
-      setIsAddingSubtask(false);
+      setIsSubmittingSubtask(true);
+      try {
+        await addSubtask(task.id, newSubtaskTitle);
+        setNewSubtaskTitle('');
+        setIsAddingSubtask(false);
+      } finally {
+        setIsSubmittingSubtask(false);
+      }
     }
+  };
+
+  const handleSubtaskFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleAddSubtask();
   };
 
   const getBackgroundColor = () => {
@@ -78,11 +90,24 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   const subtasks = task.subtasks && task.subtasks.length > 0 && (
     <Collapse in={showSubtasks}>
       <Box sx={{ pl: 4, mt: 1 }}>
-        <StrictModeDroppable droppableId={task.id.toString()}>
-          {(provided: DroppableProvided) => (
+        <StrictModeDroppable droppableId={`subtasks-${task.id}`}>
+          {(provided) => (
             <Box
               ref={provided.innerRef}
               {...provided.droppableProps}
+              sx={{
+                minHeight: '48px',
+                backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                borderRadius: '6px',
+                padding: '8px',
+                mb: 1,
+                border: '1px dashed #bdbdbd',
+                transition: 'background-color 0.2s ease, border-color 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                  borderColor: '#9e9e9e'
+                }
+              }}
             >
               {(task.subtasks || [])
                 .sort((a, b) => a.task_order - b.task_order)
@@ -105,21 +130,32 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
 
   const addSubtaskForm = !isSubtask && isAddingSubtask && (
     <Box sx={{ pl: 4, mt: 1 }}>
-      <Stack direction="row" spacing={1}>
-        <TextField
-          size="small"
-          value={newSubtaskTitle}
-          onChange={(e) => setNewSubtaskTitle(e.target.value)}
-          placeholder="Enter subtask title"
-          fullWidth
-        />
-        <IconButton onClick={handleAddSubtask} color="primary">
-          <AddIcon />
-        </IconButton>
-        <IconButton onClick={() => setIsAddingSubtask(false)}>
-          <DeleteIcon />
-        </IconButton>
-      </Stack>
+      <form onSubmit={handleSubtaskFormSubmit}>
+        <Stack direction="row" spacing={1}>
+          <TextField
+            size="small"
+            value={newSubtaskTitle}
+            onChange={(e) => setNewSubtaskTitle(e.target.value)}
+            placeholder="Enter subtask title"
+            fullWidth
+            disabled={isSubmittingSubtask}
+            autoFocus
+          />
+          <IconButton 
+            onClick={handleAddSubtask} 
+            color="primary"
+            disabled={isSubmittingSubtask || !newSubtaskTitle.trim()}
+          >
+            <CheckIcon />
+          </IconButton>
+          <IconButton 
+            onClick={() => setIsAddingSubtask(false)}
+            disabled={isSubmittingSubtask}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Stack>
+      </form>
     </Box>
   );
 
@@ -134,27 +170,31 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
           {...provided.draggableProps}
           sx={{ 
             mb: 1,
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            position: 'relative',
             transform: snapshot.isDragging ? 'scale(1.02)' : 'none',
-            zIndex: snapshot.isDragging ? 100 : 1,
-            willChange: 'transform, box-shadow',
-            position: 'relative'
+            transition: 'transform 0.2s ease',
+            zIndex: snapshot.isDragging ? 1000 : 'auto'
           }}
         >
           <Paper
-            elevation={snapshot.isDragging ? 4 : 1} 
-            sx={{ 
-              p: 1, 
+            elevation={snapshot.isDragging ? 6 : 1}
+            sx={{
+              p: 1,
               backgroundColor: getBackgroundColor(),
               borderLeft: task.task_type !== 'basic' ? `4px solid ${task.task_type === 'work-task' ? '#3498db' : '#27ae60'}` : undefined,
-              transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
               opacity: task.is_completed ? 0.8 : 1,
               position: 'relative',
-              outline: snapshot.isDragging ? `2px solid ${theme.palette.primary.main}` : 'none',
+              cursor: snapshot.isDragging ? 'grabbing' : 'default',
+              transform: snapshot.isDragging ? 'rotate(1deg)' : 'none',
+              transition: 'all 0.2s ease',
+              boxShadow: snapshot.isDragging ? 8 : 1,
+              minHeight: '48px',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
-              <Box 
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Box
                 {...provided.dragHandleProps}
                 sx={{ 
                   cursor: 'grab',
@@ -163,11 +203,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                   color: 'text.secondary',
                   pr: 0.5,
                   opacity: 0.5,
-                  transition: 'opacity 0.2s ease, color 0.2s ease',
                   '&:hover': { 
                     opacity: 1,
                     color: theme.palette.primary.main 
-                  }
+                  },
+                  '&:active': {
+                    cursor: 'grabbing'
+                  },
+                  touchAction: 'none'
                 }}
               >
                 <DragIndicatorIcon fontSize="small" />
@@ -262,7 +305,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                 ) : (
                   <>
                     <IconButton size="small" onClick={handleSave} color="primary">
-                      <AddIcon fontSize="small" />
+                      <CheckIcon fontSize="small" />
                     </IconButton>
                     <IconButton size="small" onClick={handleCancel}>
                       <DeleteIcon fontSize="small" />
@@ -275,7 +318,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
           
           {subtasks}
           {addSubtaskForm}
-        
         </Box>
       )}
     </Draggable>
