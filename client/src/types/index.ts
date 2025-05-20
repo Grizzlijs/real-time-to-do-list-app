@@ -36,6 +36,7 @@ export interface TaskUpdateDTO {
   description?: string;
   is_completed?: boolean;
   task_order?: number;
+  parent_id?: number | null;
   cost?: number | null;
   task_type?: string;
 }

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Container, Typography, Box, Button, Grid, Paper, 
-  Divider, Card, CardContent, CardMedia, CardActions,
-  Avatar, Fade, Zoom, useMediaQuery, useTheme,
+  Divider, Card, CardContent, CardMedia,
+  Avatar, Fade, Zoom, useTheme,
   Modal, IconButton, Link as MuiLink
 } from '@mui/material';
 import { Link } from 'react-router-dom';
@@ -26,7 +26,6 @@ import SpeedIcon from '@mui/icons-material/Speed';
 const HomePage: React.FC = () => {
   const { lists, loadLists, isLoading } = useTodo();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [heroAnimationComplete, setHeroAnimationComplete] = useState(false);
   const [isEasterEggOpen, setIsEasterEggOpen] = useState(false);
   const [isGiftOpen, setIsGiftOpen] = useState(false);
@@ -767,8 +766,8 @@ const HomePage: React.FC = () => {
                     </Avatar>
                       <Box>
                         <Typography variant="h6" component="h3" noWrap sx={{ fontWeight: 700 }}>
-                      {list.title}
-                    </Typography>
+                          {list.title}
+                        </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                           Created {new Date(list.created_at).toLocaleDateString('en-US', {
                       year: 'numeric', 
@@ -1166,72 +1165,6 @@ const HomePage: React.FC = () => {
   );
 };
 
-// Helper component for feature items
-interface FeatureItemProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-const FeatureItem: React.FC<FeatureItemProps> = ({ icon, title, description }) => (
-  <Grid item xs={12} sm={6} md={3}>
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
-        p: 3,
-      }}
-    >
-      <Box 
-        sx={{ 
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 80,
-          height: 80,
-          borderRadius: '50%',
-          backgroundColor: 'rgba(5, 89, 201, 0.1)',
-          color: 'primary.main',
-          mb: 3,
-        }}
-      >
-        {icon}
-      </Box>
-      <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-        {title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {description}
-      </Typography>
-    </Box>
-  </Grid>
-);
-
-// Chip component for feature tags
-interface ChipProps {
-  label: string;
-}
-
-const Chip: React.FC<ChipProps> = ({ label }) => (
-  <Box 
-    component="span" 
-    sx={{ 
-      px: 1.5, 
-      py: 0.5, 
-      borderRadius: 4, 
-      backgroundColor: 'rgba(5, 89, 201, 0.1)', 
-      color: 'primary.main',
-      fontSize: '0.75rem',
-      fontWeight: 500,
-      display: 'inline-block',
-    }}
-  >
-    {label}
-  </Box>
-);
-
 // Loading indicator
 interface CircularProgressProps {
   size: number;
@@ -1283,18 +1216,23 @@ const ProFeaturesModal: React.FC<{
     >
       <Box sx={{
         position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: { xs: '90%', sm: '80%', md: 900 },
-        maxHeight: '90vh',
+        top: { xs: '0', sm: '50%' },
+        left: { xs: '0', sm: '50%' },
+        right: { xs: '0', sm: 'auto' },
+        bottom: { xs: '0', sm: 'auto' },
+        transform: { xs: 'none', sm: 'translate(-50%, -50%)' },
+        width: { xs: '100%', sm: '80%', md: 900 },
+        height: { xs: '100%', sm: 'auto' },
+        maxHeight: { xs: '100%', sm: '90vh' },
         bgcolor: 'background.paper',
-        borderRadius: 4,
+        borderRadius: { xs: 0, sm: 4 },
         boxShadow: 24,
         p: 0,
         outline: 'none',
         overflow: 'hidden',
         zIndex: 1200,
+        display: 'flex',
+        flexDirection: 'column',
       }}>
         {/* Close button */}
         <IconButton
@@ -1318,6 +1256,7 @@ const ProFeaturesModal: React.FC<{
           display: 'flex',
           flexDirection: 'column',
           overflow: 'auto',
+          WebkitOverflowScrolling: 'touch', // Improve momentum scrolling on iOS
         }}>
           {/* Gift Animation */}
           <Box sx={{
@@ -1328,6 +1267,7 @@ const ProFeaturesModal: React.FC<{
             alignItems: 'center',
             position: 'relative',
             overflow: 'hidden',
+            flexShrink: 0, // Prevent shrinking
           }}>
             {/* Gift box that opens to reveal content */}
             <Box sx={{
@@ -1464,12 +1404,15 @@ const ProFeaturesModal: React.FC<{
           {/* Profile content appears after gift opens */}
           {isGiftOpen && (
             <Box sx={{
-              p: 4,
+              p: { xs: 2, sm: 4 },
               animation: 'slide-up 0.5s forwards',
               '@keyframes slide-up': {
                 '0%': { opacity: 0, transform: 'translateY(20px)' },
                 '100%': { opacity: 1, transform: 'translateY(0)' },
-              }
+              },
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              flex: 1,
             }}>
               <Grid container spacing={4}>
                 <Grid item xs={12} md={4}>

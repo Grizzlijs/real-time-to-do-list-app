@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { DragDropContext, Droppable, DropResult, DroppableProps, DroppableProvided } from 'react-beautiful-dnd';
 import TaskItem from './TaskItem';
@@ -8,23 +8,15 @@ import { useTodo } from '../context/TodoContext';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { Task } from '../types';
 
-// Fix for React 18 Strict Mode and react-beautiful-dnd
-// Uses JavaScript default parameters instead of defaultProps
-const StrictModeDroppable = ({
-  children,
-  droppableId,
-  type = 'DEFAULT',
-  direction = 'vertical',
-  ignoreContainerClipping = false,
-  isDropDisabled = false,
-  isCombineEnabled = false,
-  mode = 'standard',
-}: DroppableProps) => {
+// Improved StrictModeDroppable to fix drag and drop issues in React 18
+export const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
   const [enabled, setEnabled] = useState(false);
   
-  React.useEffect(() => {
-    // Wait until after client-side hydration to enable
-    const animation = requestAnimationFrame(() => setEnabled(true));
+  useEffect(() => {
+    const animation = requestAnimationFrame(() => {
+      setEnabled(true);
+    });
+    
     return () => {
       cancelAnimationFrame(animation);
       setEnabled(false);
@@ -32,22 +24,21 @@ const StrictModeDroppable = ({
   }, []);
   
   if (!enabled) {
-    return null;
+    return (
+      <Box sx={{ 
+        minHeight: '200px',
+        backgroundColor: '#f9f9f9', 
+        borderRadius: '4px',
+        transition: 'all 0.2s ease'
+      }}>
+        <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+          Loading task list...
+        </Typography>
+      </Box>
+    );
   }
   
-  return (
-    <Droppable
-      droppableId={droppableId}
-      type={type}
-      direction={direction}
-      ignoreContainerClipping={ignoreContainerClipping}
-      isDropDisabled={isDropDisabled}
-      isCombineEnabled={isCombineEnabled}
-      mode={mode}
-    >
-      {children}
-    </Droppable>
-  );
+  return <Droppable {...props}>{children}</Droppable>;
 };
 
 const TaskList: React.FC = () => {
@@ -59,6 +50,7 @@ const TaskList: React.FC = () => {
     createTask, 
     reorderTasks,
     getTaskHierarchy,
+    updateTaskParent,
     isLoading,
     error
   } = useTodo();
@@ -74,19 +66,37 @@ const TaskList: React.FC = () => {
     setNewTaskTitle('');
   };
 
-  // Handle drag and drop reordering
-  const handleDragEnd = (result: DropResult) => {
-    const { destination, source } = result;
+  // Handle drag and drop reordering and subtask conversion
+  const handleDragEnd = useCallback((result: DropResult) => {
+    const { destination, source, draggableId } = result;
     
-    // If dropped outside the list or in the same position
-    if (!destination || 
-        (destination.droppableId === source.droppableId && 
-         destination.index === source.index)) {
+    // If dropped outside the list or no change in position
+    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
       return;
     }
+
+    // Get the task ID from the draggableId (remove the 'task-' prefix)
+    const taskId = parseInt(draggableId.replace('task-', ''));
     
+    // Get the dragged task
+    const draggedTask = filteredTasks.find(task => task.id === taskId);
+    if (!draggedTask) return;
+
+    // Handle subtask conversion (moving to/from subtask position)
+    if (source.droppableId !== destination.droppableId) {
+      // Convert to/from subtask
+      const newParentId = destination.droppableId === 'root' ? null : parseInt(destination.droppableId);
+      updateTaskParent(draggedTask.id, newParentId);
+      return;
+    }
+
+    // Get tasks at the current level
+    const levelTasks = source.droppableId === 'root' 
+      ? filteredTasks.filter(task => !task.parent_id)
+      : filteredTasks.filter(task => task.parent_id === parseInt(source.droppableId));
+
     // Create a copy of tasks to modify
-    const tasks = [...filteredTasks];
+    const tasks = [...levelTasks];
     
     // Remove the dragged item
     const [removed] = tasks.splice(source.index, 1);
@@ -102,10 +112,11 @@ const TaskList: React.FC = () => {
     
     // Call API to update order
     reorderTasks(reorderedTasks);
-  };
+  }, [filteredTasks, reorderTasks, updateTaskParent]);
 
   // Get hierarchical task structure for display
   const hierarchicalTasks = getTaskHierarchy();
+  
   // Filter tasks based on current filter
   let displayedTasks: Task[] = [];
   if (filter === 'all') {
@@ -117,6 +128,9 @@ const TaskList: React.FC = () => {
       return true;
     });
   }
+
+  // Sort tasks by order
+  displayedTasks.sort((a, b) => a.task_order - b.task_order);
   
   return (
     <Paper elevation={2} sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '75vh' }}>
@@ -162,7 +176,9 @@ const TaskList: React.FC = () => {
               mb: 2, 
               display: 'flex', 
               justifyContent: 'space-between',
-              alignItems: 'center'
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 1
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -188,19 +204,25 @@ const TaskList: React.FC = () => {
           
           {/* Task list with drag and drop */}
           <DragDropContext onDragEnd={handleDragEnd}>
-            <StrictModeDroppable droppableId="task-list">
+            <StrictModeDroppable droppableId="root">
               {(provided: DroppableProvided) => (
                 <Box
                   {...provided.droppableProps}
                   ref={provided.innerRef}
-                  sx={{ minHeight: '200px' }}
+                  sx={{ 
+                    minHeight: '200px',
+                    willChange: 'contents',
+                    overflowAnchor: 'none'
+                  }}
                 >
                   {displayedTasks.length > 0 ? (
                     displayedTasks.map((task, index) => (
                       <TaskItem 
-                        key={task.id} 
+                        key={`task-${task.id}`} 
                         task={task} 
-                        index={index} 
+                        index={index}
+                        isSubtask={false}
+                        parentId={null}
                       />
                     ))
                   ) : (
@@ -221,4 +243,4 @@ const TaskList: React.FC = () => {
   );
 };
 
-export default TaskList;
+export default memo(TaskList);

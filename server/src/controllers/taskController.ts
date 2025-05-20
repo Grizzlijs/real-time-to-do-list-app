@@ -87,7 +87,7 @@ export const getTaskById = async (req: Request, res: Response) => {
 export const updateTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, is_completed, task_order, cost, task_type }: TaskUpdateDTO = req.body;
+    const { title, description, is_completed, task_order, parent_id, cost, task_type }: TaskUpdateDTO = req.body;
     
     // First, get the current task to know which list it belongs to
     const taskResult = await pool.query('SELECT * FROM tasks WHERE id = $1', [id]);
@@ -125,6 +125,12 @@ export const updateTask = async (req: Request, res: Response) => {
     if (task_order !== undefined) {
       updateFields.push(`task_order = $${paramCount}`);
       queryParams.push(task_order);
+      paramCount++;
+    }
+    
+    if (parent_id !== undefined) {
+      updateFields.push(`parent_id = $${paramCount}`);
+      queryParams.push(parent_id);
       paramCount++;
     }
     

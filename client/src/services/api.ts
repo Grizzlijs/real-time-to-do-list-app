@@ -24,9 +24,8 @@ export const updateList = async (id: number, title: string): Promise<TodoList> =
   return response.data;
 };
 
-export const deleteList = async (id: number): Promise<{ message: string; list: TodoList }> => {
-  const response = await axios.delete(`${API_URL}/api/lists/${id}`);
-  return response.data;
+export const deleteList = async (listId: number): Promise<void> => {
+  await axios.delete(`${API_URL}/api/lists/${listId}`);
 };
 
 // Task API endpoints

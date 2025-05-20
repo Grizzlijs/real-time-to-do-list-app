@@ -12,7 +12,6 @@ import {
   Menu,
   MenuItem,
   Box,
-  Divider,
   Stack,
   IconButton,
   useMediaQuery,
@@ -138,7 +137,7 @@ const Header: React.FC = () => {
               }}>
                 <ListIcon sx={{ fontSize: 18, color: 'primary.main', mr: 1, opacity: 0.8 }} />
                 <Typography variant="body2" color="primary.main" fontWeight={600}>
-                  {currentList.title}
+                  Current List: {currentList.title}
                 </Typography>
               </Box>
             )}
@@ -214,7 +213,8 @@ const Header: React.FC = () => {
           elevation: 0,
           sx: { 
             mt: 1.5, 
-            width: 320,
+            width: { xs: '90%', sm: 320 },
+            maxHeight: { xs: '70vh', sm: 'auto' },
             borderRadius: '16px',
             overflow: 'hidden',
             background: 'rgba(255, 255, 255, 0.95)',
@@ -235,41 +235,12 @@ const Header: React.FC = () => {
         }}
         transitionDuration={250}
       >
-        <Box sx={{ 
-          py: 2.5, 
-          px: 2.5, 
-          position: 'relative',
-          borderBottom: '1px solid rgba(0,0,0,0.06)'
-        }}>
-          <Typography variant="h6" sx={{ 
-            fontWeight: 700, 
-            fontSize: '1.1rem',
-            background: 'linear-gradient(45deg, #172B4D 30%, #0559C9 90%)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            Your Lists
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {lists.length} list{lists.length !== 1 ? 's' : ''} available
-          </Typography>
-          
-          {/* Visual decoration */}
-          <Box sx={{
-            position: 'absolute',
-            top: -5,
-            right: -5,
-            width: 60,
-            height: 60,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(5, 89, 201, 0.08) 0%, rgba(5, 89, 201, 0) 70%)',
-            zIndex: 0
-          }} />
-        </Box>
+        <Typography variant="subtitle1" fontWeight={600} sx={{ px: 2, pt: 2 }}>
+          Your Lists
+        </Typography>
         
         <Box sx={{ 
-          maxHeight: 320, 
+          maxHeight: { xs: 'calc(70vh - 100px)', sm: 320 }, 
           overflow: 'auto',
           px: 1.5,
           py: 1.5,
@@ -283,7 +254,8 @@ const Header: React.FC = () => {
           },
           '&::-webkit-scrollbar-thumb:hover': {
             backgroundColor: 'rgba(0,0,0,0.2)',
-          }
+          },
+          WebkitOverflowScrolling: 'touch', // Improve momentum scrolling on iOS
         }}>
           {lists.map((list, index) => (
             <Box key={list.id} sx={{ position: 'relative' }}>
@@ -451,26 +423,38 @@ const Header: React.FC = () => {
         anchorEl={mobileMenuAnchor}
         open={Boolean(mobileMenuAnchor)}
         onClose={handleCloseMobileMenu}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
         PaperProps={{
           elevation: 0,
           sx: { 
-            mt: 1.5, 
-            width: 280,
-            borderRadius: '16px',
-            overflow: 'hidden',
+            width: '100%',
+            maxWidth: '100%',
+            top: '56px !important',
+            left: '0px !important',
+            right: '0px',
+            maxHeight: 'calc(100vh - 56px)',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            border: 'none',
+            borderRadius: '0 0 16px 16px',
             background: 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)'
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+            mt: 0,
+            '&:before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '100%',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
+              zIndex: 0,
+            }
           }
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
         }}
         transitionDuration={250}
       >
@@ -707,14 +691,22 @@ const Header: React.FC = () => {
         PaperProps={{
           sx: {
             borderRadius: 2,
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+            maxHeight: { xs: '100%', sm: '80vh' },
+            margin: { xs: 0, sm: 2 },
+            width: { xs: '100%', sm: 'auto' },
+            maxWidth: { xs: '100%', sm: 600 },
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch'
           }
         }}
+        fullScreen={isMobile}
+        fullWidth
       >
         <DialogTitle sx={{ fontWeight: 600, pb: 1 }}>
           Create New List
         </DialogTitle>
-        <DialogContent>
+        <DialogContent dividers sx={{ overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <img 
               src={`${process.env.PUBLIC_URL}/logo512.png`} 
@@ -750,7 +742,7 @@ const Header: React.FC = () => {
             }}
           />
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
           <Button 
             onClick={() => setIsDialogOpen(false)}
             sx={{ 

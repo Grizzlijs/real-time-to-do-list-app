@@ -1,344 +1,284 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Task } from '../types';
 import { useTodo } from '../context/TodoContext';
-import { Draggable } from 'react-beautiful-dnd';
+import { Draggable, DroppableProvided } from 'react-beautiful-dnd';
 import ReactMarkdown from 'react-markdown';
-import { Box, TextField, Typography, Checkbox, IconButton, Paper, Collapse, Stack } from '@mui/material';
+import { Box, TextField, Typography, Checkbox, IconButton, Paper, Collapse, Stack, useTheme, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AddIcon from '@mui/icons-material/Add';
 import MoneyIcon from '@mui/icons-material/MonetizationOn';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { StrictModeDroppable } from './TaskList';
 
 interface TaskItemProps {
   task: Task;
   index: number;
   isSubtask?: boolean;
+  parentId: number | null;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, parentId }) => {
   const {
-    updateTaskCompletion,
-    updateTaskTitle,
-    updateTaskDescription,
-    updateTaskCost,
+    updateTask,
     deleteTask,
-    createTask
+    addSubtask
   } = useTodo();
-
   const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(task.title);
-  const [editDescription, setEditDescription] = useState(task.description || '');
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(task.title);
+  const [editedDescription, setEditedDescription] = useState(task.description || '');
   const [showSubtasks, setShowSubtasks] = useState(true);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
-  const [isEditingCost, setIsEditingCost] = useState(false);
-  const [editCost, setEditCost] = useState(task.cost?.toString() || '');
+  const theme = useTheme();
 
-  const handleToggleComplete = () => {
-    updateTaskCompletion(task.id, !task.is_completed);
+  const handleToggleComplete = async () => {
+    await updateTask(task.id, { is_completed: !task.is_completed });
   };
 
-  const handleEditSave = () => {
-    if (editTitle.trim()) {
-      updateTaskTitle(task.id, editTitle);
-      updateTaskDescription(task.id, editDescription);
-      setIsEditing(false);
-    }
+  const handleDelete = async () => {
+    await deleteTask(task.id);
   };
 
-  const handleCostSave = () => {
-    const costValue = editCost ? parseFloat(editCost) : null;
-    updateTaskCost(task.id, costValue);
-    setIsEditingCost(false);
+  const handleEdit = () => {
+    setIsEditing(true);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (isEditing) handleEditSave();
-      else if (isEditingCost) handleCostSave();
-      else if (isAddingSubtask) handleAddSubtask();
-    }
-    if (e.key === 'Escape') {
-      if (isEditing) {
-        setEditTitle(task.title);
-        setEditDescription(task.description || '');
-        setIsEditing(false);
-      } else if (isEditingCost) {
-        setEditCost(task.cost?.toString() || '');
-        setIsEditingCost(false);
-      } else if (isAddingSubtask) {
-        setNewSubtaskTitle('');
-        setIsAddingSubtask(false);
-      }
-    }
+  const handleSave = async () => {
+    await updateTask(task.id, {
+      title: editedTitle,
+      description: editedDescription
+    });
+    setIsEditing(false);
   };
 
-  const handleAddSubtask = () => {
+  const handleCancel = () => {
+    setEditedTitle(task.title);
+    setEditedDescription(task.description || '');
+    setIsEditing(false);
+  };
+
+  const handleAddSubtask = async () => {
     if (newSubtaskTitle.trim()) {
-      createTask(newSubtaskTitle, task.id);
+      await addSubtask(task.id, newSubtaskTitle);
       setNewSubtaskTitle('');
       setIsAddingSubtask(false);
     }
   };
 
-  // Assign task color based on type
-  const getTaskTypeColor = () => {
-    switch (task.task_type) {
-      case 'work-task':
-        return '#ecf0f1';
-      case 'food':
-        return '#e8f5e9';
-      default:
-        return 'white';
+  const getBackgroundColor = () => {
+    if (task.is_completed) {
+      return theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)';
     }
+    return theme.palette.background.paper;
   };
 
-  const taskContentDisplay = (
-    <>
-      {!isEditing ? (
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
-          <Checkbox
-            checked={task.is_completed}
-            onChange={handleToggleComplete}
-            color="primary"
-          />
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography
-              variant="body1"
-              sx={{
-                textDecoration: task.is_completed ? 'line-through' : 'none',
-                color: task.is_completed ? 'text.secondary' : 'text.primary',
-                wordBreak: 'break-word'
-              }}
-            >
-              {task.title}
-            </Typography>
-          </Box>
-          
-          {/* Cost display (or editing UI) */}
-          {(task.cost || task.totalCost || isEditingCost) && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-              <MoneyIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-              {isEditingCost ? (
-                <TextField
-                  size="small"
-                  value={editCost}
-                  onChange={(e) => setEditCost(e.target.value)}
-                  onBlur={handleCostSave}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                  type="number"
-                  inputProps={{ step: 0.01 }}
-                  sx={{ width: '80px' }}
-                />
-              ) : (
-                <Typography
-                  variant="body2"
-                  onClick={() => setIsEditingCost(true)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  ${task.totalCost ? task.totalCost.toFixed(2) : task.cost?.toFixed(2)}
-                </Typography>
-              )}
-            </Box>
-          )}
-          
-          <Stack direction="row">
-            {task.description && (
-              <IconButton
-                size="small"
-                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-              >
-                {isDescriptionExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
-            )}
-            
-            <IconButton size="small" onClick={() => setIsEditing(true)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-            
-            <IconButton size="small" onClick={() => deleteTask(task.id)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Stack>
-        </Stack>
-      ) : (
-        <Box sx={{ width: '100%', p: 1 }}>
-          <TextField
-            fullWidth
-            label="Task Title"
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            margin="dense"
-            onKeyDown={handleKeyDown}
-            autoFocus
-          />
-          <TextField
-            fullWidth
-            label="Description (markdown supported)"
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            margin="dense"
-            multiline
-            rows={3}            onKeyDown={(e) => {
-              if (e.key === 'Tab') {
-                e.preventDefault();
-                const target = e.target as HTMLTextAreaElement;
-                const start = target.selectionStart || 0;
-                const end = target.selectionEnd || 0;
-                setEditDescription(
-                  editDescription.substring(0, start) + '  ' + editDescription.substring(end)
-                );
-                setTimeout(() => {
-                  // Need to refocus and set selection after state update
-                  const textField = e.currentTarget.querySelector('textarea');
-                  if (textField) {
-                    textField.selectionStart = start + 2;
-                    textField.selectionEnd = start + 2;
-                  }
-                }, 0);
-              }
-            }}
-          />
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-            <TextField
-              label="Cost"
-              type="number"
-              size="small"
-              inputProps={{ step: 0.01 }}
-              value={editCost}
-              onChange={(e) => setEditCost(e.target.value)}
-              sx={{ width: '150px', mr: 1 }}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', flexGrow: 1 }}>
-              <IconButton onClick={() => {
-                setEditTitle(task.title);
-                setEditDescription(task.description || '');
-                setEditCost(task.cost?.toString() || '');
-                setIsEditing(false);
-              }}>
-                <DeleteIcon />
-              </IconButton>
-              <IconButton onClick={handleEditSave} color="primary">
-                <EditIcon />
-              </IconButton>
-            </Box>
-          </Box>
-        </Box>
-      )}
-    </>
-  );
-
-  // Render markdown description if expanded
-  const taskDescription = isDescriptionExpanded && task.description && (
-    <Box sx={{ px: 3, py: 1, backgroundColor: '#f9f9f9' }}>
-      <ReactMarkdown>{task.description}</ReactMarkdown>
-    </Box>
-  );
-
-  // Render subtasks if they exist
   const subtasks = task.subtasks && task.subtasks.length > 0 && (
     <Collapse in={showSubtasks}>
-      <Box sx={{ pl: 4 }}>
-        {task.subtasks.map((subtask, subtaskIndex) => (
-          <TaskItem 
-            key={subtask.id} 
-            task={subtask} 
-            index={subtaskIndex} 
-            isSubtask={true} 
-          />
-        ))}
+      <Box sx={{ pl: 4, mt: 1 }}>
+        <StrictModeDroppable droppableId={task.id.toString()}>
+          {(provided: DroppableProvided) => (
+            <Box
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {(task.subtasks || [])
+                .sort((a, b) => a.task_order - b.task_order)
+                .map((subtask, idx) => (
+                  <TaskItem
+                    key={`subtask-${subtask.id}`}
+                    task={subtask}
+                    index={idx}
+                    isSubtask={true}
+                    parentId={task.id}
+                  />
+                ))}
+              {provided.placeholder}
+            </Box>
+          )}
+        </StrictModeDroppable>
       </Box>
     </Collapse>
   );
 
-  // Add subtask form
-  const addSubtaskForm = isAddingSubtask && (
-    <Box sx={{ pl: 4, py: 1 }}>
-      <Paper elevation={0} sx={{ p: 1, backgroundColor: '#f5f5f5' }}>
+  const addSubtaskForm = !isSubtask && isAddingSubtask && (
+    <Box sx={{ pl: 4, mt: 1 }}>
+      <Stack direction="row" spacing={1}>
         <TextField
-          fullWidth
           size="small"
-          placeholder="New subtask..."
           value={newSubtaskTitle}
           onChange={(e) => setNewSubtaskTitle(e.target.value)}
-          onKeyDown={handleKeyDown}
-          autoFocus
+          placeholder="Enter subtask title"
+          fullWidth
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-          <IconButton size="small" onClick={() => setIsAddingSubtask(false)}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-          <IconButton 
-            size="small" 
-            onClick={handleAddSubtask} 
-            color="primary" 
-            disabled={!newSubtaskTitle.trim()}
-          >
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Paper>
+        <IconButton onClick={handleAddSubtask} color="primary">
+          <AddIcon />
+        </IconButton>
+        <IconButton onClick={() => setIsAddingSubtask(false)}>
+          <DeleteIcon />
+        </IconButton>
+      </Stack>
     </Box>
   );
 
   return (
-    <Draggable draggableId={`task-${task.id}`} index={index} isDragDisabled={isSubtask}>
-      {(provided) => (
+    <Draggable 
+      draggableId={`task-${task.id}`} 
+      index={index}
+    >
+      {(provided, snapshot) => (
         <Box 
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          sx={{ mb: 1 }}
+          sx={{ 
+            mb: 1,
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            transform: snapshot.isDragging ? 'scale(1.02)' : 'none',
+            zIndex: snapshot.isDragging ? 100 : 1,
+            willChange: 'transform, box-shadow',
+            position: 'relative'
+          }}
         >
-          <Paper 
-            elevation={1} 
+          <Paper
+            elevation={snapshot.isDragging ? 4 : 1} 
             sx={{ 
               p: 1, 
-              backgroundColor: getTaskTypeColor(),
+              backgroundColor: getBackgroundColor(),
               borderLeft: task.task_type !== 'basic' ? `4px solid ${task.task_type === 'work-task' ? '#3498db' : '#27ae60'}` : undefined,
+              transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+              opacity: task.is_completed ? 0.8 : 1,
+              position: 'relative',
+              outline: snapshot.isDragging ? `2px solid ${theme.palette.primary.main}` : 'none',
             }}
           >
-            {taskContentDisplay}
-            {taskDescription}
-
-            {/* Subtask controls */}
-            {!isSubtask && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                {/* Toggle subtasks visibility if there are subtasks */}
-                {task.subtasks && task.subtasks.length > 0 && (
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
+              <Box 
+                {...provided.dragHandleProps}
+                sx={{ 
+                  cursor: 'grab',
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: 'text.secondary',
+                  pr: 0.5,
+                  opacity: 0.5,
+                  transition: 'opacity 0.2s ease, color 0.2s ease',
+                  '&:hover': { 
+                    opacity: 1,
+                    color: theme.palette.primary.main 
+                  }
+                }}
+              >
+                <DragIndicatorIcon fontSize="small" />
+              </Box>
+              
+              <Checkbox
+                checked={task.is_completed}
+                onChange={handleToggleComplete}
+                color="primary"
+              />
+              
+              {!isEditing ? (
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      textDecoration: task.is_completed ? 'line-through' : 'none',
+                      color: task.is_completed ? 'text.secondary' : 'text.primary',
+                    }}
+                  >
+                    {task.title}
+                  </Typography>
+                  {task.description && (
+                    <Box sx={{ mt: 0.5 }}>
+                      <ReactMarkdown>{task.description}</ReactMarkdown>
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    fullWidth
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    size="small"
+                    sx={{ mb: 1 }}
+                  />
+                  <TextField
+                    fullWidth
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    multiline
+                    rows={2}
+                    size="small"
+                  />
+                </Box>
+              )}
+              
+              <Stack direction="row" spacing={0.5}>
+                {!isEditing ? (
+                  <>
+                    <IconButton size="small" onClick={handleEdit}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={handleDelete}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </>
+                ) : (
+                  <>
+                    <IconButton size="small" onClick={handleSave} color="primary">
+                      <AddIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={handleCancel}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </>
+                )}
+              </Stack>
+            </Stack>
+          </Paper>
+          
+          {subtasks}
+          {addSubtaskForm}
+          
+          {!isSubtask && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+              {task.subtasks && task.subtasks.length > 0 && (
+                <Tooltip title={showSubtasks ? "Hide subtasks" : "Show subtasks"}>
                   <IconButton 
                     size="small" 
                     onClick={() => setShowSubtasks(!showSubtasks)}
                   >
                     {showSubtasks ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
                   </IconButton>
-                )}
-                
-                {/* Add subtask button */}
-                {!isAddingSubtask && (
+                </Tooltip>
+              )}
+              
+              {!isAddingSubtask && (
+                <Tooltip title="Add subtask">
                   <IconButton 
                     size="small" 
                     onClick={() => setIsAddingSubtask(true)}
-                    sx={{ ml: 'auto' }}
+                    sx={{ 
+                      ml: 'auto',
+                      '&:hover': {
+                        color: theme.palette.success.main,
+                        backgroundColor: 'rgba(0, 200, 83, 0.08)'
+                      }
+                    }}
                   >
                     <AddIcon fontSize="small" />
                   </IconButton>
-                )}
-              </Box>
-            )}
-          </Paper>
-          
-          {subtasks}
-          {addSubtaskForm}
+                </Tooltip>
+              )}
+            </Box>
+          )}
         </Box>
       )}
     </Draggable>
   );
 };
 
-export default TaskItem;
+export default memo(TaskItem);
