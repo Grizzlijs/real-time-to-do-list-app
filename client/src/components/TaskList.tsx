@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
-import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton, Tooltip } from '@mui/material';
 import { DragDropContext, Droppable, DropResult, DroppableProps } from 'react-beautiful-dnd';
 import TaskItem from './TaskItem';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import { useTodo } from '../context/TodoContext';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { Task } from '../types';
 
 // Improved StrictModeDroppable to fix drag and drop issues in React 18
@@ -29,9 +30,13 @@ export const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
         minHeight: '200px',
         backgroundColor: '#f9f9f9', 
         borderRadius: '4px',
-        transition: 'all 0.2s ease'
+        transition: 'all 0.2s ease',
+        p: 2,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}>
-        <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+        <Typography variant="body2" color="text.secondary">
           Loading task list...
         </Typography>
       </Box>
@@ -301,13 +306,17 @@ const TaskList: React.FC = () => {
           {/* Task list with drag and drop */}
           <DragDropContext onDragEnd={handleDragEnd}>
             <StrictModeDroppable droppableId="root">
-              {(provided) => (
+              {(provided, snapshot) => (
                 <Box
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   sx={{
                     minHeight: '50px',
                     position: 'relative',
+                    transition: 'background-color 0.2s ease',
+                    backgroundColor: snapshot.isDraggingOver ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
+                    borderRadius: 1,
+                    p: 1,
                     '&::before': {
                       content: '""',
                       position: 'absolute',
@@ -316,12 +325,10 @@ const TaskList: React.FC = () => {
                       right: 0,
                       bottom: 0,
                       pointerEvents: 'none',
-                      border: '2px dashed transparent',
+                      border: '2px dashed',
+                      borderColor: snapshot.isDraggingOver ? 'primary.main' : 'transparent',
                       borderRadius: 1,
                       transition: 'border-color 0.2s ease'
-                    },
-                    '&:hover::before': {
-                      borderColor: 'primary.main'
                     }
                   }}
                 >
@@ -347,6 +354,23 @@ const TaskList: React.FC = () => {
               )}
             </StrictModeDroppable>
           </DragDropContext>
+
+          {/* Help tooltip for drag and drop */}
+          <Tooltip title="Drag a task onto another task to make it a subtask" placement="bottom">
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              mt: 2, 
+              color: 'text.secondary',
+              cursor: 'help' 
+            }}>
+              <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center' }}>
+                <ArrowDownwardIcon fontSize="small" sx={{ mr: 0.5 }} /> 
+                Tip: Drag tasks directly onto other tasks to create subtasks
+              </Typography>
+            </Box>
+          </Tooltip>
         </>
       )}
     </Paper>
