@@ -355,22 +355,7 @@ const TaskList: React.FC = () => {
             </StrictModeDroppable>
           </DragDropContext>
 
-          {/* Help tooltip for drag and drop */}
-          <Tooltip title="Drag a task onto another task to make it a subtask" placement="bottom">
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              mt: 2, 
-              color: 'text.secondary',
-              cursor: 'help' 
-            }}>
-              <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center' }}>
-                <ArrowDownwardIcon fontSize="small" sx={{ mr: 0.5 }} /> 
-                Tip: Drag tasks directly onto other tasks to create subtasks
-              </Typography>
-            </Box>
-          </Tooltip>
+
         </>
       )}
     </Paper>

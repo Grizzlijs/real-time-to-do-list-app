@@ -14,6 +14,10 @@ interface OnlineUser {
   color: string;
 }
 
+// Define local storage keys
+const USER_NAME_KEY = 'todo_app_username';
+const USER_COLOR_KEY = 'todo_app_color';
+
 let socket: Socket | null = null;
 let isConnecting = false;
 let onlineUsersCallback: ((users: OnlineUser[]) => void) | null = null;
@@ -38,13 +42,54 @@ const generateUserName = () => {
   return `${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${randomNum}`;
 };
 
+// Helper functions for user information
+export const saveUserInfo = (name: string, color: string): void => {
+  try {
+    localStorage.setItem(USER_NAME_KEY, name);
+    localStorage.setItem(USER_COLOR_KEY, color);
+    
+    // Update the socket auth if it exists
+    if (socket) {
+      (socket.auth as SocketAuth).name = name;
+      (socket.auth as SocketAuth).color = color;
+      
+      // Emit user info update event
+      if (socket.connected) {
+        console.log('Emitting user-info-update:', { name, color });
+        socket.emit('user-info-update', { name, color });
+      }
+    }
+    console.log('User info saved to localStorage:', { name, color });
+  } catch (e) {
+    console.error('Failed to save user info to localStorage:', e);
+  }
+};
+
+export const getUserInfoFromStorage = (): { name: string; color: string } => {
+  try {
+    const storedName = localStorage.getItem(USER_NAME_KEY);
+    const storedColor = localStorage.getItem(USER_COLOR_KEY);
+    return {
+      name: storedName || generateUserName(),
+      color: storedColor || generateUserColor()
+    };
+  } catch (e) {
+    console.error('Failed to get user info from localStorage:', e);
+    return {
+      name: generateUserName(),
+      color: generateUserColor()
+    };
+  }
+};
+
 export const initSocket = (): Socket => {
   if (!socket && !isConnecting) {
     isConnecting = true;
     console.log('Initializing socket connection to:', SOCKET_URL);
+    const userInfo = getUserInfoFromStorage();
     const auth: SocketAuth = {
-      name: generateUserName(),
-      color: generateUserColor()
+      name: userInfo.name,
+      color: userInfo.color
     };
     
     socket = io(SOCKET_URL, { 
@@ -265,6 +310,39 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+// Chat history storage
+const CHAT_HISTORY_PREFIX = 'todo_app_chat_';
+const MAX_CHAT_MESSAGES = 100; // Maximum number of messages to store per list
+
+export const getChatHistoryKey = (listId: number | string): string => 
+  `${CHAT_HISTORY_PREFIX}${listId}`;
+
+export const saveChatHistory = (listId: number | string, messages: ChatMessage[]): void => {
+  try {
+    // Only keep up to MAX_CHAT_MESSAGES most recent messages
+    const messagesToSave = messages.slice(-MAX_CHAT_MESSAGES);
+    localStorage.setItem(getChatHistoryKey(listId), JSON.stringify(messagesToSave));
+    console.log(`Saved ${messagesToSave.length} chat messages for list ${listId}`);
+  } catch (e) {
+    console.error('Failed to save chat history to localStorage:', e);
+  }
+};
+
+export const loadChatHistory = (listId: number | string): ChatMessage[] => {
+  try {
+    const history = localStorage.getItem(getChatHistoryKey(listId));
+    if (history) {
+      const messages = JSON.parse(history) as ChatMessage[];
+      console.log(`Loaded ${messages.length} chat messages for list ${listId}`);
+      return messages;
+    }
+    return [];
+  } catch (e) {
+    console.error('Failed to load chat history from localStorage:', e);
+    return [];
+  }
+};
+
 // Add chat message functions
 export const emitChatMessage = (listId: number, message: string): void => {
   if (socket?.connected) {
@@ -278,6 +356,18 @@ export const emitChatMessage = (listId: number, message: string): void => {
 export const onChatMessage = (callback: (message: ChatMessage) => void): void => {
   if (socket?.connected) {
     socket.on('chat-message', callback);
+  }
+};
+
+export const onUserInfoUpdated = (callback: (data: { id: string; name: string; color: string }) => void): void => {
+  if (socket?.connected) {
+    socket.on('user-info-updated', callback);
+  }
+};
+
+export const offUserInfoUpdated = (callback: (data: { id: string; name: string; color: string }) => void): void => {
+  if (socket?.connected) {
+    socket.off('user-info-updated', callback);
   }
 };
 

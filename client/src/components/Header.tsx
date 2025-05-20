@@ -16,15 +16,16 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
-  Container
+  Container,
+  Divider
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTodo } from '../context/TodoContext';
 import AddIcon from '@mui/icons-material/Add';
 import ListIcon from '@mui/icons-material/List';
 import MenuIcon from '@mui/icons-material/Menu';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import SettingsIcon from '@mui/icons-material/Settings';
+import UserProfileButton from './UserProfileButton';
 // uuid is used in context but not here
 
 const Header: React.FC = () => {
@@ -141,8 +142,7 @@ const Header: React.FC = () => {
                 </Typography>
               </Box>
             )}
-            
-            {/* Right side - Action buttons */}
+              {/* Right side - Action buttons */}
             {!isMobile ? (
               <Stack direction="row" spacing={2} alignItems="center">
                 <Button 
@@ -178,18 +178,24 @@ const Header: React.FC = () => {
                 >
                   My Lists
                 </Button>
-
+                
+                <Divider orientation="vertical" flexItem sx={{ mx: 0 }} />
+                
+                <UserProfileButton />
               </Stack>
             ) : (
               // Mobile menu
               <>
-                <IconButton 
-                  color="primary" 
-                  edge="end" 
-                  onClick={handleOpenMobileMenu}
-                >
-                  <MenuIcon />
-                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <UserProfileButton />
+                  <IconButton 
+                    color="primary" 
+                    edge="end" 
+                    onClick={handleOpenMobileMenu}
+                  >
+                    <MenuIcon />
+                  </IconButton>
+                </Box>
               </>
             )}
           </Toolbar>
@@ -474,37 +480,6 @@ const Header: React.FC = () => {
         
         {/* Main actions */}
         <Box sx={{ p: 1.5 }}>
-          <MenuItem 
-            onClick={() => { 
-              navigate('/');
-              handleCloseMobileMenu();
-            }}
-            sx={{ 
-              borderRadius: '12px',
-              py: 1.5,
-              mb: 1,
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                background: 'rgba(0, 0, 0, 0.02)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 8px rgba(0,0,0,0.03)',
-              }
-            }}
-          >
-            <Box sx={{ 
-              width: 36, 
-              height: 36,
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(5, 89, 201, 0.1)',
-              mr: 1.5
-            }}>
-              <DashboardIcon sx={{ fontSize: 20, color: 'primary.main' }} />
-            </Box>
-            <Typography fontWeight={500}>Dashboard</Typography>
-          </MenuItem>
           
           <MenuItem 
             onClick={() => {
@@ -652,36 +627,7 @@ const Header: React.FC = () => {
             </Box>
           )}
         </Box>
-        
-        {/* Footer action */}
-        <Box sx={{ p: 2 }}>
-          <MenuItem 
-            onClick={handleCloseMobileMenu}
-            sx={{ 
-              borderRadius: '12px',
-              py: 1.5,
-              transition: 'all 0.2s ease',
-              background: 'rgba(0, 0, 0, 0.02)',
-              '&:hover': {
-                background: 'rgba(0, 0, 0, 0.04)',
-              }
-            }}
-          >
-            <Box sx={{ 
-              width: 36, 
-              height: 36,
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(0, 0, 0, 0.06)',
-              mr: 1.5
-            }}>
-              <SettingsIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-            </Box>
-            <Typography fontWeight={500} color="text.secondary">Settings</Typography>
-          </MenuItem>
-        </Box>
+      
       </Menu>
       
       {/* New list dialog */}

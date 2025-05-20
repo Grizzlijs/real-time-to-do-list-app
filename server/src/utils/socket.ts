@@ -169,6 +169,42 @@ export const setupSocketHandlers = (io: Server) => {
       }
     });
 
+    // Handle user info updates
+    socket.on('user-info-update', (data: { name: string; color: string }) => {
+      try {
+        const { name, color } = data;
+        const user = onlineUsers.get(socket.id);
+        
+        if (!user) {
+          console.warn('User not found for user info update');
+          return;
+        }
+        
+        // Update user info in memory
+        user.name = name;
+        user.color = color;
+        onlineUsers.set(socket.id, user);
+        
+        console.log(`User ${socket.id} updated their info:`, { name, color });
+        
+        // Broadcast the update to all relevant rooms
+        if (user.listId) {
+          const roomName = `list-${user.listId}`;
+          io.to(roomName).emit('user-info-updated', {
+            id: socket.id,
+            name,
+            color
+          });
+          console.log(`Broadcasted user info update to room ${roomName}`);
+          
+          // Update online users list for the current list
+          broadcastUserList(user.listId);
+        }
+      } catch (error) {
+        console.error('Error handling user info update via socket:', error);
+      }
+    });
+
     // Handle disconnect
     socket.on('disconnect', () => {
       const user = onlineUsers.get(socket.id);

@@ -42,6 +42,9 @@ interface TodoContextProps {
   setCurrentList: (list: TodoList) => void;
   createList: (name: string) => Promise<void>;
   updateList: (id: number, name: string) => Promise<void>;
+  setUserInfo: (name: string, color: string) => void;
+  isUsernameDialogOpen: boolean;
+  setUsernameDialogOpen: (open: boolean) => void;
 }
 
 const TodoContext = createContext<TodoContextProps | undefined>(undefined);
@@ -68,6 +71,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [currentUser, setCurrentUser] = useState<OnlineUser | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isUsernameDialogOpen, setUsernameDialogOpen] = useState(false);
 
   // Socket event handlers
   const handleTaskCreated = useCallback((data: { listId: number; task: Task }) => {
@@ -181,10 +185,21 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         console.log('Received online users update in TodoContext:', users);
         setOnlineUsers(users);
       });
+
+      // Set up user info update listener
+      socketService.onUserInfoUpdated((updatedUser) => {
+        console.log('Received user info update:', updatedUser);
+        // Update online users list
+        setOnlineUsers(prev => prev.map(user => 
+          user.id === updatedUser.id
+            ? { ...user, name: updatedUser.name, color: updatedUser.color }
+            : user
+        ));
+      });
     });
-    
+
     return () => {
-      console.log('Cleaning up socket connection in TodoContext');
+      console.log('Cleaning up socket listeners in TodoContext');
       socketService.disconnectSocket();
     };
   }, []); // Empty dependency array to run only once on mount
@@ -946,6 +961,13 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     }
   };
 
+  // Add missing setUserInfo handler
+  const setUserInfo = useCallback((name: string, color: string) => {
+    socketService.saveUserInfo(name, color);
+    const userInfo = socketService.getUserInfo();
+    setCurrentUser(userInfo);
+  }, []);
+
   const value = {
     lists,
     currentList,
@@ -979,7 +1001,10 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     createList: async (name: string) => {
       await createNewList(name);
     },
-    updateList
+    updateList,
+    setUserInfo,
+    isUsernameDialogOpen,
+    setUsernameDialogOpen,
   };
 
   return <TodoContext.Provider value={value}>{children}</TodoContext.Provider>;
