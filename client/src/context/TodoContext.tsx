@@ -27,8 +27,7 @@ interface TodoContextProps {
   loadLists: () => Promise<void>;
   loadListBySlug: (slug: string) => Promise<void>;
   createNewList: (title: string) => Promise<TodoList>;
-  deleteList: (id: number) => Promise<void>;
-  createTask: (title: string, parentId?: number | null, cost?: number | null, taskType?: string) => Promise<void>;
+  deleteList: (id: number) => Promise<void>;  createTask: (title: string, parentId?: number | null, cost?: number | null, taskType?: string, specialFields?: any) => Promise<void>;
   updateTaskCompletion: (taskId: number, isCompleted: boolean) => Promise<void>;
   updateTaskTitle: (taskId: number, title: string) => Promise<void>;
   updateTaskDescription: (taskId: number, description: string) => Promise<void>;
@@ -384,22 +383,42 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       setError('Failed to delete list');
       setIsLoading(false);
     }
-  };
-
-  // Create a new task
-  const createTask = async (title: string, parentId?: number | null, cost?: number | null, taskType?: string) => {
+  };  // Create a new task
+  const createTask = async (title: string, parentId?: number | null, cost?: number | null, taskType?: string, specialFields?: any) => {
     if (!currentList) return;
     
     // Don't set global loading state which would trigger full page refresh
     // setIsLoading(true);
     setError(null);
-    try {
-      const taskData = {
+    try {      // Use a properly typed object
+      const taskData: {
+        title: string;
+        list_id: number;
+        parent_id: number | null;
+        task_type: string;
+        deadline?: string;
+        carbohydrate?: number;
+        protein?: number;
+        fat?: number;
+        picture?: string;
+      } = {
         title,
         list_id: currentList.id,
         parent_id: parentId || null,
         task_type: taskType || 'basic',
       };
+      
+      // Add special fields based on task type
+      if (specialFields) {
+        if (taskType === 'work-task' && specialFields.deadline) {
+          taskData.deadline = specialFields.deadline;
+        } else if (taskType === 'food') {
+          if (specialFields.carbohydrate !== undefined) taskData.carbohydrate = specialFields.carbohydrate;
+          if (specialFields.protein !== undefined) taskData.protein = specialFields.protein;
+          if (specialFields.fat !== undefined) taskData.fat = specialFields.fat;
+          if (specialFields.picture) taskData.picture = specialFields.picture;
+        }
+      }
       
       // Make the API call
       const newTask = await api.createTask(taskData);

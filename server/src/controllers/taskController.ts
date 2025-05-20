@@ -23,10 +23,22 @@ export const getTasksByList = async (req: Request, res: Response) => {
 // Create a new task
 export const createTask = async (req: Request, res: Response) => {
   try {
-    const { title, description, list_id, parent_id, task_type }: TaskCreateDTO = req.body;
+    const { 
+      title, description, list_id, parent_id, task_type,
+      deadline, carbohydrate, protein, fat, picture
+    }: TaskCreateDTO = req.body;
     
     if (!title || !list_id) {
       return res.status(400).json({ error: 'Title and list_id are required' });
+    }
+    
+    // Special field validations
+    if (task_type === 'work-task' && !deadline) {
+      return res.status(400).json({ error: 'Deadline is required for work tasks' });
+    }
+    
+    if (task_type === 'food' && (carbohydrate === undefined || protein === undefined || fat === undefined)) {
+      return res.status(400).json({ error: 'Carbohydrate, protein, and fat values are required for food tasks' });
     }
     
     // Get the highest task_order for the list to add the new task at the end
@@ -36,10 +48,11 @@ export const createTask = async (req: Request, res: Response) => {
     );
     
     const taskOrder = parseInt(orderResult.rows[0].max_order) + 1;
-      const result = await pool.query(
+    const result = await pool.query(
       `INSERT INTO tasks 
-       (title, description, list_id, task_order, parent_id, task_type) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+       (title, description, list_id, task_order, parent_id, task_type,
+        deadline, carbohydrate, protein, fat, picture) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
        RETURNING *`,
       [
         title, 
@@ -47,7 +60,12 @@ export const createTask = async (req: Request, res: Response) => {
         list_id, 
         taskOrder, 
         parent_id || null, 
-        task_type || 'basic'
+        task_type || 'basic',
+        deadline || null,
+        carbohydrate || null,
+        protein || null,
+        fat || null,
+        picture || null
       ]
     );
     
@@ -85,7 +103,10 @@ export const getTaskById = async (req: Request, res: Response) => {
 export const updateTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, is_completed, task_order, parent_id, task_type }: TaskUpdateDTO = req.body;
+    const { 
+      title, description, is_completed, task_order, parent_id, task_type,
+      deadline, carbohydrate, protein, fat, picture
+    }: TaskUpdateDTO = req.body;
     
     // First, get the current task to know which list it belongs to
     const taskResult = await pool.query('SELECT * FROM tasks WHERE id = $1', [id]);
@@ -96,6 +117,17 @@ export const updateTask = async (req: Request, res: Response) => {
     
     const currentTask = taskResult.rows[0];
     const listId = currentTask.list_id;
+    
+    // Special field validations if task type is being changed
+    if (task_type === 'work-task' && deadline === undefined && !currentTask.deadline) {
+      return res.status(400).json({ error: 'Deadline is required for work tasks' });
+    }
+    
+    if (task_type === 'food' && 
+        (carbohydrate === undefined && protein === undefined && fat === undefined) && 
+        (!currentTask.carbohydrate || !currentTask.protein || !currentTask.fat)) {
+      return res.status(400).json({ error: 'Carbohydrate, protein, and fat values are required for food tasks' });
+    }
     
     // Build the dynamic update query
     let updateFields = [];
@@ -131,11 +163,42 @@ export const updateTask = async (req: Request, res: Response) => {
       queryParams.push(parent_id);
       paramCount++;
     }
-
     
     if (task_type !== undefined) {
       updateFields.push(`task_type = $${paramCount}`);
       queryParams.push(task_type);
+      paramCount++;
+    }
+    
+    // Special fields for work-task type
+    if (deadline !== undefined) {
+      updateFields.push(`deadline = $${paramCount}`);
+      queryParams.push(deadline);
+      paramCount++;
+    }
+    
+    // Special fields for food type
+    if (carbohydrate !== undefined) {
+      updateFields.push(`carbohydrate = $${paramCount}`);
+      queryParams.push(carbohydrate);
+      paramCount++;
+    }
+    
+    if (protein !== undefined) {
+      updateFields.push(`protein = $${paramCount}`);
+      queryParams.push(protein);
+      paramCount++;
+    }
+    
+    if (fat !== undefined) {
+      updateFields.push(`fat = $${paramCount}`);
+      queryParams.push(fat);
+      paramCount++;
+    }
+    
+    if (picture !== undefined) {
+      updateFields.push(`picture = $${paramCount}`);
+      queryParams.push(picture);
       paramCount++;
     }
     

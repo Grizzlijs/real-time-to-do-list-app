@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { 
   Box, TextField, Typography, Checkbox, IconButton, Paper, 
   Collapse, Stack, useTheme, Tooltip, Select, MenuItem, FormControl, 
-  InputLabel 
+  InputLabel, Grid, Divider, Card
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -16,6 +16,8 @@ import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
 import { StrictModeDroppable } from './TaskList';
 
 
@@ -36,19 +38,36 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
   const [editedDescription, setEditedDescription] = useState(task.description || '');
-  const [editedTaskType, setEditedTaskType] = useState(task.task_type);
+  const [editedTaskType, setEditedTaskType] = useState(task.task_type || 'basic');
   const [showSubtasks, setShowSubtasks] = useState(true);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isDraggedOver, setIsDraggedOver] = useState(false);
+  
+  // For work-task type
+  const [editedDeadline, setEditedDeadline] = useState(task.deadline || '');
+  
+  // For food type
+  const [editedCarbs, setEditedCarbs] = useState(task.carbohydrate?.toString() || '');
+  const [editedProtein, setEditedProtein] = useState(task.protein?.toString() || '');
+  const [editedFat, setEditedFat] = useState(task.fat?.toString() || '');
+  const [editedPictureUrl, setEditedPictureUrl] = useState(task.picture || '');
+  
   const taskRef = useRef<HTMLElement | null>(null) as React.MutableRefObject<HTMLElement | null>;
   const theme = useTheme();
 
   useEffect(() => {
     setEditedTitle(task.title);
     setEditedDescription(task.description || '');
-    setEditedTaskType(task.task_type);
+    setEditedTaskType(task.task_type || 'basic');
+    
+    // Update special field states
+    setEditedDeadline(task.deadline || '');
+    setEditedCarbs(task.carbohydrate?.toString() || '');
+    setEditedProtein(task.protein?.toString() || '');
+    setEditedFat(task.fat?.toString() || '');
+    setEditedPictureUrl(task.picture || '');
   }, [task]);
   
   useEffect(() => {
@@ -111,18 +130,49 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   };
 
   const handleSave = async () => {
-    await updateTask(task.id, {
+    // Basic validation for required fields
+    if (editedTaskType === 'work-task' && !editedDeadline) {
+      alert('Deadline is required for work tasks');
+      return;
+    }
+    
+    if (editedTaskType === 'food' && (!editedCarbs || !editedProtein || !editedFat)) {
+      alert('Carbohydrate, protein, and fat values are required for food tasks');
+      return;
+    }
+    
+    const updates: any = {
       title: editedTitle,
       description: editedDescription,
       task_type: editedTaskType
-    });
+    };
+    
+    // Add special fields based on task type
+    if (editedTaskType === 'work-task') {
+      updates.deadline = editedDeadline;
+    } else if (editedTaskType === 'food') {
+      updates.carbohydrate = editedCarbs ? parseFloat(editedCarbs) : 0;
+      updates.protein = editedProtein ? parseFloat(editedProtein) : 0;
+      updates.fat = editedFat ? parseFloat(editedFat) : 0;
+      updates.picture = editedPictureUrl;
+    }
+    
+    await updateTask(task.id, updates);
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setEditedTitle(task.title);
     setEditedDescription(task.description || '');
-    setEditedTaskType(task.task_type);
+    setEditedTaskType(task.task_type || 'basic');
+    
+    // Reset special fields
+    setEditedDeadline(task.deadline || '');
+    setEditedCarbs(task.carbohydrate?.toString() || '');
+    setEditedProtein(task.protein?.toString() || '');
+    setEditedFat(task.fat?.toString() || '');
+    setEditedPictureUrl(task.picture || '');
+    
     setIsEditing(false);
   };
 
@@ -242,6 +292,152 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     </Box>
   );
 
+  // Render special task content based on task_type
+  const renderSpecialTaskContent = () => {
+    if (task.task_type === 'work-task' && task.deadline) {
+      return (
+        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
+          <CalendarTodayIcon fontSize="small" sx={{ mr: 1 }} />
+          <Typography variant="body2" fontWeight="medium">
+            Deadline: {new Date(task.deadline).toLocaleDateString()}
+          </Typography>
+        </Box>
+      );
+    }
+    
+    if (task.task_type === 'food' && (task.carbohydrate !== undefined || task.protein !== undefined || task.fat !== undefined)) {
+      return (
+        <Box sx={{ mt: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5, color: 'success.main' }}>
+            <RestaurantIcon fontSize="small" sx={{ mr: 1 }} />
+            <Typography variant="body2" fontWeight="medium">
+              Nutritional Values (g/100g):
+            </Typography>
+          </Box>
+          
+          <Grid container spacing={1}>
+            <Grid item xs={4}>
+              <Typography variant="caption">
+                Carbs: {task.carbohydrate}g
+              </Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="caption">
+                Protein: {task.protein}g
+              </Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="caption">
+                Fat: {task.fat}g
+              </Typography>
+            </Grid>
+          </Grid>
+          
+          {task.picture && (
+            <Box sx={{ mt: 1 }}>
+              <img 
+                src={task.picture} 
+                alt={task.title}
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '120px', 
+                  borderRadius: '4px',
+                  objectFit: 'cover'
+                }} 
+              />
+            </Box>
+          )}
+        </Box>
+      );
+    }
+    
+    return null;
+  };
+  
+  // Render edit form for special task fields
+  const renderSpecialTaskEditForm = () => {
+    if (editedTaskType === 'work-task') {
+      return (
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="subtitle2" color="primary" gutterBottom>
+            Work Task Details
+          </Typography>
+          <TextField
+            fullWidth
+            label="Deadline"
+            type="date"
+            value={editedDeadline}
+            onChange={(e) => setEditedDeadline(e.target.value)}
+            InputLabelProps={{
+              shrink: true,
+            }}
+            required
+            size="small"
+          />
+        </Box>
+      );
+    }
+    
+    if (editedTaskType === 'food') {
+      return (
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="subtitle2" color="primary" gutterBottom>
+            Food Nutritional Information (g/100g)
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={4}>
+              <TextField
+                fullWidth
+                label="Carbohydrate"
+                type="number"
+                InputProps={{ inputProps: { min: 0, step: 0.1 } }}
+                value={editedCarbs}
+                onChange={(e) => setEditedCarbs(e.target.value)}
+                required
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                fullWidth
+                label="Protein"
+                type="number"
+                InputProps={{ inputProps: { min: 0, step: 0.1 } }}
+                value={editedProtein}
+                onChange={(e) => setEditedProtein(e.target.value)}
+                required
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                fullWidth
+                label="Fat"
+                type="number"
+                InputProps={{ inputProps: { min: 0, step: 0.1 } }}
+                value={editedFat}
+                onChange={(e) => setEditedFat(e.target.value)}
+                required
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Picture URL (Optional)"
+                value={editedPictureUrl}
+                onChange={(e) => setEditedPictureUrl(e.target.value)}
+                size="small"
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <Draggable 
       draggableId={`task-${task.id}`} 
@@ -280,7 +476,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
               sx={{
                 p: 1,
                 backgroundColor: getBackgroundColor(),
-                borderLeft: task.task_type !== 'basic' ? `4px solid ${task.task_type === 'work-task' ? '#3498db' : '#27ae60'}` : undefined,
+                borderLeft: task.task_type !== 'basic' ? 
+                  `4px solid ${task.task_type === 'work-task' ? '#3498db' : '#27ae60'}` : undefined,
                 opacity: task.is_completed ? 0.8 : 1,
                 position: 'relative',
                 cursor: snapshot.isDragging ? 'grabbing' : 'default',
@@ -342,6 +539,10 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                         <ReactMarkdown>{task.description}</ReactMarkdown>
                       </Box>
                     )}
+                    
+                    {/* Render special task content */}
+                    {renderSpecialTaskContent()}
+                    
                     <Typography variant="caption" color="text.secondary">
                       Type: {task.task_type === 'basic' ? 'Basic' : 
                             task.task_type === 'work-task' ? 'Work' : 
@@ -366,7 +567,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                       size="small"
                       sx={{ mb: 1 }}
                     />
-                    <FormControl size="small" fullWidth>
+                    <FormControl size="small" fullWidth sx={{ mb: 1 }}>
                       <InputLabel id={`task-type-label-${task.id}`}>Task Type</InputLabel>
                       <Select
                         labelId={`task-type-label-${task.id}`}
@@ -379,6 +580,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                         <MenuItem value="food">Food</MenuItem>
                       </Select>
                     </FormControl>
+                    
+                    {/* Render special task edit form */}
+                    {renderSpecialTaskEditForm()}
                   </Box>
                 )}
                 
@@ -457,10 +661,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                   zIndex: 2,
                   boxShadow: 2
                 }}
-              >               <KeyboardArrowDownIcon fontSize="small" />
+              >
+                <KeyboardArrowDownIcon fontSize="small" />
               </Box>
             )}
-               {Array.isArray(task.subtasks) && task.subtasks.length > 0 && subtasks}
+            {Array.isArray(task.subtasks) && task.subtasks.length > 0 && subtasks}
             {addSubtaskForm}
           </Box>
         );

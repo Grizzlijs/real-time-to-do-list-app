@@ -17,10 +17,18 @@ CREATE TABLE tasks (
   is_completed BOOLEAN DEFAULT FALSE,
   task_order INTEGER NOT NULL,
   parent_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
-
   task_type VARCHAR(50) DEFAULT 'basic',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Special fields for work-task type
+  deadline DATE,
+  
+  -- Special fields for food type
+  carbohydrate DECIMAL,
+  protein DECIMAL,
+  fat DECIMAL,
+  picture VARCHAR(255)
 );
 
 -- Index for faster queries

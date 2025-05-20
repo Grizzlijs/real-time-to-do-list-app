@@ -28,6 +28,15 @@ export interface Task {
   created_at: string;
   updated_at: string;
   subtasks?: Task[];
+  
+  // Special fields for work-task type
+  deadline?: string;
+  
+  // Special fields for food type
+  carbohydrate?: number;
+  protein?: number;
+  fat?: number;
+  picture?: string;
 }
 
 export interface TaskCreateDTO {
@@ -35,6 +44,15 @@ export interface TaskCreateDTO {
   list_id: number;
   parent_id?: number | null;
   task_type?: string;
+  
+  // Special fields for work-task type
+  deadline?: string;
+  
+  // Special fields for food type
+  carbohydrate?: number;
+  protein?: number;
+  fat?: number;
+  picture?: string;
 }
 
 export interface TaskUpdateDTO {
@@ -45,6 +63,15 @@ export interface TaskUpdateDTO {
   parent_id?: number | null;
   task_type?: string;
   cost?: number | null;
+  
+  // Special fields for work-task type
+  deadline?: string;
+  
+  // Special fields for food type
+  carbohydrate?: number;
+  protein?: number;
+  fat?: number;
+  picture?: string;
 }
 
 export interface ListCreateDTO {
