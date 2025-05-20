@@ -13,7 +13,6 @@ export interface Task {
   is_completed: boolean;
   task_order: number;
   parent_id?: number | null;
-  cost?: number | null;
   task_type: 'basic' | 'work-task' | 'food' | string;
   created_at: string;
   updated_at: string;
@@ -25,7 +24,6 @@ export interface TaskCreateDTO {
   list_id: number;
   task_order?: number;
   parent_id?: number | null;
-  cost?: number | null;
   task_type?: string;
 }
 
@@ -35,7 +33,7 @@ export interface TaskUpdateDTO {
   is_completed?: boolean;
   task_order?: number;
   parent_id?: number | null;
-  cost?: number | null;
+
   task_type?: string;
 }
 

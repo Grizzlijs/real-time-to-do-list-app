@@ -22,7 +22,7 @@ export interface TaskCreateDTO {
   list_id: number;
   task_order?: number;
   parent_id?: number | null;
-  cost?: number | null;
+
   task_type?: string;
 }
 

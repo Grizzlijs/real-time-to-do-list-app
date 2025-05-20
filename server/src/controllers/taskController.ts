@@ -23,7 +23,7 @@ export const getTasksByList = async (req: Request, res: Response) => {
 // Create a new task
 export const createTask = async (req: Request, res: Response) => {
   try {
-    const { title, description, list_id, parent_id, cost, task_type }: TaskCreateDTO = req.body;
+    const { title, description, list_id, parent_id, task_type }: TaskCreateDTO = req.body;
     
     if (!title || !list_id) {
       return res.status(400).json({ error: 'Title and list_id are required' });
@@ -36,11 +36,10 @@ export const createTask = async (req: Request, res: Response) => {
     );
     
     const taskOrder = parseInt(orderResult.rows[0].max_order) + 1;
-    
-    const result = await pool.query(
+      const result = await pool.query(
       `INSERT INTO tasks 
-       (title, description, list_id, task_order, parent_id, cost, task_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       (title, description, list_id, task_order, parent_id, task_type) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING *`,
       [
         title, 
@@ -48,7 +47,6 @@ export const createTask = async (req: Request, res: Response) => {
         list_id, 
         taskOrder, 
         parent_id || null, 
-        cost || null, 
         task_type || 'basic'
       ]
     );
@@ -87,7 +85,7 @@ export const getTaskById = async (req: Request, res: Response) => {
 export const updateTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, is_completed, task_order, parent_id, cost, task_type }: TaskUpdateDTO = req.body;
+    const { title, description, is_completed, task_order, parent_id, task_type }: TaskUpdateDTO = req.body;
     
     // First, get the current task to know which list it belongs to
     const taskResult = await pool.query('SELECT * FROM tasks WHERE id = $1', [id]);
@@ -133,12 +131,7 @@ export const updateTask = async (req: Request, res: Response) => {
       queryParams.push(parent_id);
       paramCount++;
     }
-    
-    if (cost !== undefined) {
-      updateFields.push(`cost = $${paramCount}`);
-      queryParams.push(cost);
-      paramCount++;
-    }
+
     
     if (task_type !== undefined) {
       updateFields.push(`task_type = $${paramCount}`);

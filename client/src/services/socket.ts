@@ -52,12 +52,6 @@ export const saveUserInfo = (name: string, color: string): void => {
     if (socket) {
       (socket.auth as SocketAuth).name = name;
       (socket.auth as SocketAuth).color = color;
-      
-      // Emit user info update event
-      if (socket.connected) {
-        console.log('Emitting user-info-update:', { name, color });
-        socket.emit('user-info-update', { name, color });
-      }
     }
     console.log('User info saved to localStorage:', { name, color });
   } catch (e) {
@@ -356,18 +350,6 @@ export const emitChatMessage = (listId: number, message: string): void => {
 export const onChatMessage = (callback: (message: ChatMessage) => void): void => {
   if (socket?.connected) {
     socket.on('chat-message', callback);
-  }
-};
-
-export const onUserInfoUpdated = (callback: (data: { id: string; name: string; color: string }) => void): void => {
-  if (socket?.connected) {
-    socket.on('user-info-updated', callback);
-  }
-};
-
-export const offUserInfoUpdated = (callback: (data: { id: string; name: string; color: string }) => void): void => {
-  if (socket?.connected) {
-    socket.off('user-info-updated', callback);
   }
 };
 

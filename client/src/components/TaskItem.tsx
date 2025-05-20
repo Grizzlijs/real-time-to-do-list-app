@@ -3,7 +3,11 @@ import { Task } from '../types';
 import { useTodo } from '../context/TodoContext';
 import { Draggable, DroppableProvided, Droppable } from 'react-beautiful-dnd';
 import ReactMarkdown from 'react-markdown';
-import { Box, TextField, Typography, Checkbox, IconButton, Paper, Collapse, Stack, useTheme, Tooltip } from '@mui/material';
+import { 
+  Box, TextField, Typography, Checkbox, IconButton, Paper, 
+  Collapse, Stack, useTheme, Tooltip, Select, MenuItem, FormControl, 
+  InputLabel 
+} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -32,6 +36,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
   const [editedDescription, setEditedDescription] = useState(task.description || '');
+  const [editedTaskType, setEditedTaskType] = useState(task.task_type);
   const [showSubtasks, setShowSubtasks] = useState(true);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
@@ -43,6 +48,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   useEffect(() => {
     setEditedTitle(task.title);
     setEditedDescription(task.description || '');
+    setEditedTaskType(task.task_type);
   }, [task]);
   
   useEffect(() => {
@@ -107,7 +113,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   const handleSave = async () => {
     await updateTask(task.id, {
       title: editedTitle,
-      description: editedDescription
+      description: editedDescription,
+      task_type: editedTaskType
     });
     setIsEditing(false);
   };
@@ -115,6 +122,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   const handleCancel = () => {
     setEditedTitle(task.title);
     setEditedDescription(task.description || '');
+    setEditedTaskType(task.task_type);
     setIsEditing(false);
   };
 
@@ -282,21 +290,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                   ? '0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23)' 
                   : isDraggedOver 
                     ? '0 0 0 2px #1976d2' 
-                    : 1,
-                minHeight: '48px',
-                display: 'flex',
-                alignItems: 'center',
-                '&::after': snapshot.isDragging ? {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  boxShadow: '0 0 0 2px #1976d2',
-                  borderRadius: 'inherit',
-                  pointerEvents: 'none'
-                } : {}
+                    : 1
               }}
             >
               <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
@@ -348,6 +342,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                         <ReactMarkdown>{task.description}</ReactMarkdown>
                       </Box>
                     )}
+                    <Typography variant="caption" color="text.secondary">
+                      Type: {task.task_type === 'basic' ? 'Basic' : 
+                            task.task_type === 'work-task' ? 'Work' : 
+                            task.task_type === 'food' ? 'Food' : task.task_type}
+                    </Typography>
                   </Box>
                 ) : (
                   <Box sx={{ flex: 1 }}>
@@ -365,7 +364,21 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                       multiline
                       rows={2}
                       size="small"
+                      sx={{ mb: 1 }}
                     />
+                    <FormControl size="small" fullWidth>
+                      <InputLabel id={`task-type-label-${task.id}`}>Task Type</InputLabel>
+                      <Select
+                        labelId={`task-type-label-${task.id}`}
+                        value={editedTaskType}
+                        label="Task Type"
+                        onChange={(e) => setEditedTaskType(e.target.value as 'basic' | 'work-task' | 'food')}
+                      >
+                        <MenuItem value="basic">Basic</MenuItem>
+                        <MenuItem value="work-task">Work</MenuItem>
+                        <MenuItem value="food">Food</MenuItem>
+                      </Select>
+                    </FormControl>
                   </Box>
                 )}
                 
@@ -444,12 +457,10 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                   zIndex: 2,
                   boxShadow: 2
                 }}
-              >
-                <KeyboardArrowDownIcon fontSize="small" />
+              >               <KeyboardArrowDownIcon fontSize="small" />
               </Box>
             )}
-            
-            {task.subtasks && task.subtasks.length > 0 && subtasks}
+               {Array.isArray(task.subtasks) && task.subtasks.length > 0 && subtasks}
             {addSubtaskForm}
           </Box>
         );

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Button, Avatar, Menu, MenuItem, ListItemIcon, Typography, Box } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useTodo } from '../context/TodoContext';
 import UsernameDialog from './UsernameDialog';
 import { getUserInfoFromStorage } from '../services/socket';
 
 const UserProfileButton: React.FC = () => {
-  const { currentUser, setUserInfo, isUsernameDialogOpen, setUsernameDialogOpen } = useTodo();
+  const { currentUser, setUserInfo, isUsernameDialogOpen, setUsernameDialogOpen: setUsernameDialog } = useTodo();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -18,14 +17,12 @@ const UserProfileButton: React.FC = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
-
   const handleOpenUsernameDialog = () => {
-    setUsernameDialogOpen(true);
+    setUsernameDialog(true);
     handleClose();
   };
-
   const handleUsernameDialogClose = (username: string | null) => {
-    setUsernameDialogOpen(false);
+    setUsernameDialog(false);
     
     if (username && currentUser) {
       setUserInfo(username, currentUser.color);

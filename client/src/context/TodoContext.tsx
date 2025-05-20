@@ -21,6 +21,9 @@ interface TodoContextProps {
   onlineUsers: OnlineUser[];
   currentUser: OnlineUser | null;
   messages: ChatMessage[];
+  isUsernameDialogOpen: boolean;
+  setUsernameDialogOpen: (open: boolean) => void;
+  setUserInfo: (username: string, color: string) => void;
   loadLists: () => Promise<void>;
   loadListBySlug: (slug: string) => Promise<void>;
   createNewList: (title: string) => Promise<TodoList>;
@@ -29,7 +32,6 @@ interface TodoContextProps {
   updateTaskCompletion: (taskId: number, isCompleted: boolean) => Promise<void>;
   updateTaskTitle: (taskId: number, title: string) => Promise<void>;
   updateTaskDescription: (taskId: number, description: string) => Promise<void>;
-  updateTaskCost: (taskId: number, cost: number | null) => Promise<void>;
   deleteTask: (taskId: number) => Promise<void>;
   reorderTasks: (tasks: Task[]) => Promise<void>;
   setFilter: (filter: 'all' | 'active' | 'completed') => void;
@@ -42,9 +44,6 @@ interface TodoContextProps {
   setCurrentList: (list: TodoList) => void;
   createList: (name: string) => Promise<void>;
   updateList: (id: number, name: string) => Promise<void>;
-  setUserInfo: (name: string, color: string) => void;
-  isUsernameDialogOpen: boolean;
-  setUsernameDialogOpen: (open: boolean) => void;
 }
 
 const TodoContext = createContext<TodoContextProps | undefined>(undefined);
@@ -71,7 +70,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [currentUser, setCurrentUser] = useState<OnlineUser | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isUsernameDialogOpen, setUsernameDialogOpen] = useState(false);
+  const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState<boolean>(false);
 
   // Socket event handlers
   const handleTaskCreated = useCallback((data: { listId: number; task: Task }) => {
@@ -185,21 +184,10 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         console.log('Received online users update in TodoContext:', users);
         setOnlineUsers(users);
       });
-
-      // Set up user info update listener
-      socketService.onUserInfoUpdated((updatedUser) => {
-        console.log('Received user info update:', updatedUser);
-        // Update online users list
-        setOnlineUsers(prev => prev.map(user => 
-          user.id === updatedUser.id
-            ? { ...user, name: updatedUser.name, color: updatedUser.color }
-            : user
-        ));
-      });
     });
-
+    
     return () => {
-      console.log('Cleaning up socket listeners in TodoContext');
+      console.log('Cleaning up socket connection in TodoContext');
       socketService.disconnectSocket();
     };
   }, []); // Empty dependency array to run only once on mount
@@ -322,7 +310,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   // Calculate filtered tasks based on filter state
   const filteredTasks = tasks.filter(task => {
     if (filter === 'all') return true;
-    if (filter === 'active') return !task.is_completed;
+    if (filter === 'active' ) return !task.is_completed;
     if (filter === 'completed') return task.is_completed;
     return true;
   });
@@ -410,7 +398,6 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         title,
         list_id: currentList.id,
         parent_id: parentId || null,
-        cost: cost || null,
         task_type: taskType || 'basic',
       };
       
@@ -533,33 +520,6 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       socketService.emitTaskUpdate(currentList.id, updatedTask);
     } catch (err) {
       console.error('Failed to update task description:', err);
-      setError('Failed to update task');
-      
-      // Revert optimistic update on failure
-      loadListBySlug(currentList.slug);
-    }
-  };
-
-  // Update task cost
-  const updateTaskCost = async (taskId: number, cost: number | null) => {
-    if (!currentList) return;
-    
-    setError(null);
-    try {
-      // Optimistically update UI
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId ? { ...task, cost } : task
-        )
-      );
-      
-      // Update on server
-      const updatedTask = await api.updateTask(taskId, { cost });
-      
-      // Emit socket event
-      socketService.emitTaskUpdate(currentList.id, updatedTask);
-    } catch (err) {
-      console.error('Failed to update task cost:', err);
       setError('Failed to update task');
       
       // Revert optimistic update on failure
@@ -961,14 +921,26 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     }
   };
 
-  // Add missing setUserInfo handler
-  const setUserInfo = useCallback((name: string, color: string) => {
-    socketService.saveUserInfo(name, color);
-    const userInfo = socketService.getUserInfo();
-    setCurrentUser(userInfo);
-  }, []);
+  // Update user info
+  const setUserInfo = useCallback(async (username: string, color: string) => {
+    if (!currentUser) return;
 
-  const value = {
+    try {
+      // Store in localStorage
+      localStorage.setItem('username', username);
+      localStorage.setItem('userColor', color);
+
+      // Update local state
+      setCurrentUser(prev => prev ? { ...prev, name: username, color } : null);
+    } catch (err) {
+      console.error('Failed to update user info:', err);
+      setError('Failed to update user info');
+    }
+  }, [currentUser]);
+
+  // ...existing useEffect hooks...
+
+  const value: TodoContextProps = {
     lists,
     currentList,
     tasks,
@@ -979,6 +951,9 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     onlineUsers,
     currentUser,
     messages,
+    isUsernameDialogOpen,
+    setUsernameDialogOpen: setIsUsernameDialogOpen,
+    setUserInfo,
     loadLists,
     loadListBySlug,
     createNewList,
@@ -987,7 +962,6 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     updateTaskCompletion,
     updateTaskTitle,
     updateTaskDescription,
-    updateTaskCost,
     deleteTask,
     reorderTasks,
     setFilter,
@@ -1001,10 +975,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     createList: async (name: string) => {
       await createNewList(name);
     },
-    updateList,
-    setUserInfo,
-    isUsernameDialogOpen,
-    setUsernameDialogOpen,
+    updateList
   };
 
   return <TodoContext.Provider value={value}>{children}</TodoContext.Provider>;
