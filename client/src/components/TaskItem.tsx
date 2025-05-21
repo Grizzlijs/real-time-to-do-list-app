@@ -252,7 +252,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     </Collapse>
   );
 
-  const addSubtaskForm = !isSubtask && isAddingSubtask && (
+  const addSubtaskForm = isAddingSubtask && (
     <Box sx={{ pl: 4, mt: 1 }}>
       <form onSubmit={handleSubtaskFormSubmit}>
         <Stack direction="row" spacing={1}>
@@ -594,38 +594,35 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                 )}
                 
                 <Stack direction="row" spacing={0.5}>
-                  {!isSubtask && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                      {task.subtasks && task.subtasks.length > 0 && (
-                        <Tooltip title={showSubtasks ? "Hide subtasks" : "Show subtasks"}>
-                          <IconButton 
-                            size="small" 
-                            onClick={() => setShowSubtasks(!showSubtasks)}
-                          >
-                            {showSubtasks ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      
-                      {!isAddingSubtask && (
-                        <Tooltip title="Add subtask">
-                          <IconButton 
-                            size="small" 
-                            onClick={() => setIsAddingSubtask(true)}
-                            sx={{ 
-                              ml: 'auto',
-                              '&:hover': {
-                                color: theme.palette.success.main,
-                                backgroundColor: 'rgba(0, 200, 83, 0.08)'
-                              }
-                            }}
-                          >
-                            <AddIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  )}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    {task.subtasks && task.subtasks.length > 0 && (
+                      <Tooltip title={showSubtasks ? "Hide subtasks" : "Show subtasks"}>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setShowSubtasks(!showSubtasks)}
+                        >
+                          {showSubtasks ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {!isAddingSubtask && (
+                      <Tooltip title="Add subtask">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setIsAddingSubtask(true)}
+                          sx={{ 
+                            ml: 'auto',
+                            '&:hover': {
+                              color: theme.palette.success.main,
+                              backgroundColor: 'rgba(0, 200, 83, 0.08)'
+                            }
+                          }}
+                        >
+                          <AddIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
 
                   {!isEditing ? (
                     <>
