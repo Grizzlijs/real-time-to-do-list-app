@@ -557,6 +557,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                       onChange={(e) => setEditedTitle(e.target.value)}
                       size="small"
                       sx={{ mb: 1 }}
+                      placeholder="Enter task title"
                     />
                     <TextField
                       fullWidth
@@ -566,7 +567,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                       rows={2}
                       size="small"
                       sx={{ mb: 1 }}
+                      placeholder="Add a description (Markdown supported)"
                     />
+                    <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        You can use <b>Markdown</b> formatting in the description.
+                      </Typography>
+                    </Box>
                     <FormControl size="small" fullWidth sx={{ mb: 1 }}>
                       <InputLabel id={`task-type-label-${task.id}`}>Task Type</InputLabel>
                       <Select
