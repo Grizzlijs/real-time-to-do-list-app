@@ -18,6 +18,7 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { StrictModeDroppable } from './TaskList';
 
 
@@ -432,7 +433,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     <Draggable 
       draggableId={`task-${task.id}`} 
       index={index}
-      isDragDisabled={isSubtask || (task.subtasks && task.subtasks.length > 0)}
+      isDragDisabled={task.subtasks && task.subtasks.length > 0}
     >
       {(provided, snapshot) => {
         // Set the ref for drag-and-drop
@@ -446,7 +447,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
         return (
           <Box 
             ref={setRefs}
-            {...(!isSubtask && (!task.subtasks || task.subtasks.length === 0) ? provided.draggableProps : {})}
+            {...((!task.subtasks || task.subtasks.length === 0) ? provided.draggableProps : {})}
             sx={{ 
               mb: 1,
               position: 'relative',
@@ -482,7 +483,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
               }}
             >
               <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
-                {(!isSubtask && (!task.subtasks || task.subtasks.length === 0)) && (
+                {(!task.subtasks || task.subtasks.length === 0) && (
                   <Box
                     {...provided.dragHandleProps}
                     sx={{ 
@@ -508,6 +509,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                   >
                     <DragIndicatorIcon fontSize="small" />
                   </Box>
+                )}
+                
+                {(task.subtasks && task.subtasks.length > 0) && (
+                  <Tooltip title="Only tasks without subtasks can be dragged">
+                    <InfoOutlinedIcon color="info" fontSize="small" sx={{ ml: 0.5, opacity: 0.7 }} />
+                  </Tooltip>
                 )}
                 
                 <Checkbox
@@ -658,7 +665,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                 <KeyboardArrowDownIcon fontSize="small" />
               </Box>
             )}
-            {Array.isArray(task.subtasks) && task.subtasks.length > 0 && subtasks}
+            {task.subtasks && task.subtasks.length > 0 && subtasks}
             {addSubtaskForm}
           </Box>
         );

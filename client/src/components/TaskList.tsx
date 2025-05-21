@@ -74,6 +74,24 @@ const TaskList: React.FC = () => {
     return getTaskHierarchy();
   }, [getTaskHierarchy, forceRender]);
   
+  // Find the last leaf node's ID in the tree (deepest, rightmost leaf)
+  const findLastLeafId = (tasks: Task[]): number | null => {
+    let lastLeafId: number | null = null;
+    function dfs(taskList: Task[]) {
+      for (let i = 0; i < taskList.length; i++) {
+        const task = taskList[i];
+        if (task.subtasks && task.subtasks.length > 0) {
+          dfs(task.subtasks);
+        } else {
+          lastLeafId = task.id;
+        }
+      }
+    }
+    dfs(tasks);
+    return lastLeafId;
+  };
+  const lastLeafId = useMemo(() => findLastLeafId(hierarchicalTasks), [hierarchicalTasks]);
+  
   // Handle form submission for creating a new task
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
