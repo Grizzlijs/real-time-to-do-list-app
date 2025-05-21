@@ -701,7 +701,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
 
       // Store the old parent ID for later reference
       const oldParentId = taskToUpdate.parent_id;
-      console.log(`Moving task ${taskId} from parent ${oldParentId} to parent ${newParentId}`);
+      // console.log(`Moving task ${taskId} from parent ${oldParentId} to parent ${newParentId}`);
 
       // Get tasks at the new parent level
       const siblingTasks = newParentId === null
@@ -711,7 +711,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // Calculate new task order
       const newTaskOrder = siblingTasks.length + 1;
       
-      console.log(`Task ${taskId} will be #${newTaskOrder} at ${newParentId === null ? 'root' : 'parent ' + newParentId}`);
+      // console.log(`Task ${taskId} will be #${newTaskOrder} at ${newParentId === null ? 'root' : 'parent ' + newParentId}`);
 
       // Create a new task object with the updated parent_id
       const updatedTaskWithNewParent = {
@@ -730,7 +730,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         
         // If this task was the old parent, remove the moved task from its subtasks
         if (oldParentId !== null && task.id === oldParentId && task.subtasks) {
-          console.log(`Removing task ${taskId} from old parent ${task.id}'s subtasks`);
+          // console.log(`Removing task ${taskId} from old parent ${task.id}'s subtasks`);
           return {
             ...task,
             subtasks: task.subtasks.filter(st => st.id !== taskId)
@@ -739,7 +739,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         
         // If this task is the new parent, add the moved task to its subtasks
         if (newParentId !== null && task.id === newParentId) {
-          console.log(`Adding task ${taskId} to new parent ${task.id}'s subtasks`);
+          // console.log(`Adding task ${taskId} to new parent ${task.id}'s subtasks`);
           const existingSubtasks = task.subtasks || [];
           const taskAlreadyInSubtasks = existingSubtasks.some(st => st.id === taskId);
           
@@ -759,12 +759,12 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       setTasks(updatedTasks);
       
       // Now update on server - this is asynchronous
-      console.log('Sending parent update to server');
+      // console.log('Sending parent update to server');
       const updatedTask = await api.updateTask(taskId, { 
         parent_id: newParentId,
         task_order: newTaskOrder
       });
-      console.log('Server updated task:', updatedTask);
+      // console.log('Server updated task:', updatedTask);
       
       // Emit socket event for the parent change immediately
       // Don't wait for the server response to emit the socket event
@@ -772,7 +772,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         ...updatedTaskWithNewParent,
         subtasks: taskToUpdate.subtasks || []
       };
-      console.log('Emitting task update for parent change:', taskForSocketEvent);
+      // console.log('Emitting task update for parent change:', taskForSocketEvent);
       socketService.emitTaskUpdate(currentList.id, taskForSocketEvent);
       
       // After server update, refresh state with server response
@@ -807,7 +807,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     
     setError(null);
     try {
-      console.log('Reordering tasks:', reorderedTasksData.map(t => ({ id: t.id, order: t.task_order, parent: t.parent_id })));
+      // console.log('Reordering tasks:', reorderedTasksData.map(t => ({ id: t.id, order: t.task_order, parent: t.parent_id })));
       
       // Ensure all tasks have the same parent_id (they should belong to the same level)
       const parentId = reorderedTasksData[0]?.parent_id;
