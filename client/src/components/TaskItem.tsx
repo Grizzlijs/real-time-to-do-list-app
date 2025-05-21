@@ -16,9 +16,11 @@ import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { StrictModeDroppable } from './TaskList';
 
 
@@ -35,7 +37,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     updateTask,
     deleteTask,
     addSubtask,
-    updateTaskParent
+    updateTaskParent,
+    reorderTasks,
+    tasks
   } = useTodo();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
@@ -431,6 +435,88 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     return null;
   };
 
+  const handleMoveUp = async () => {
+    if (!isSubtask || !parentId) return;
+    
+    // Get all sibling tasks (tasks with the same parent)
+    const siblingTasks = tasks
+      .filter(t => t.parent_id === parentId)
+      .sort((a, b) => a.task_order - b.task_order);
+    
+    const currentIndex = siblingTasks.findIndex(t => t.id === task.id);
+    
+    if (currentIndex <= 0) return; // Already at the top
+    
+    const taskToMove = siblingTasks[currentIndex];
+    const taskAbove = siblingTasks[currentIndex - 1];
+    
+    // Create a new array with the updated order
+    const updatedTasks = [...siblingTasks];
+    updatedTasks[currentIndex] = taskAbove;
+    updatedTasks[currentIndex - 1] = taskToMove;
+    
+    // Update task_order for all affected tasks
+    const tasksToUpdate = updatedTasks.map((t, idx) => ({
+      ...t,
+      task_order: idx + 1
+    }));
+    
+    await reorderTasks(tasksToUpdate);
+  };
+
+  const handleMoveDown = async () => {
+    if (!isSubtask || !parentId) return;
+    
+    // Get all sibling tasks (tasks with the same parent)
+    const siblingTasks = tasks
+      .filter(t => t.parent_id === parentId)
+      .sort((a, b) => a.task_order - b.task_order);
+    
+    const currentIndex = siblingTasks.findIndex(t => t.id === task.id);
+    
+    if (currentIndex === -1 || currentIndex >= siblingTasks.length - 1) return; // Already at the bottom
+    
+    const taskToMove = siblingTasks[currentIndex];
+    const taskBelow = siblingTasks[currentIndex + 1];
+    
+    // Create a new array with the updated order
+    const updatedTasks = [...siblingTasks];
+    updatedTasks[currentIndex] = taskBelow;
+    updatedTasks[currentIndex + 1] = taskToMove;
+    
+    // Update task_order for all affected tasks
+    const tasksToUpdate = updatedTasks.map((t, idx) => ({
+      ...t,
+      task_order: idx + 1
+    }));
+    
+    await reorderTasks(tasksToUpdate);
+  };
+
+  const handlePromoteToMain = async () => {
+    if (!isSubtask || !parentId) return;
+    
+    // Get all root level tasks to determine the new order
+    const rootTasks = tasks
+      .filter(t => t.parent_id === null)
+      .sort((a, b) => a.task_order - b.task_order);
+    
+    // Create a new array with the task added at the end
+    const updatedTasks = [...rootTasks, { ...task, parent_id: null }];
+    
+    // Update task_order for all affected tasks
+    const tasksToUpdate = updatedTasks.map((t, idx) => ({
+      ...t,
+      task_order: idx + 1
+    }));
+    
+    // First update the parent to null
+    await updateTaskParent(task.id, null);
+    
+    // Then update the order of all root tasks
+    await reorderTasks(tasksToUpdate);
+  };
+
   // Mobile: render compact card only
   if (typeof window !== 'undefined' && window.innerWidth < 900) {
     return (
@@ -466,23 +552,30 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
       {(provided, snapshot) => {
         // Set the ref for drag-and-drop
         const setRefs = (element: HTMLElement | null) => {
-          // Call the draggable's ref setter
           provided.innerRef(element);
-          // Set our local ref
           taskRef.current = element;
         };
         
+        // Get sibling tasks for arrow visibility
+        const siblingTasks = isSubtask && parentId 
+          ? tasks
+              .filter(t => t.parent_id === parentId)
+              .sort((a, b) => a.task_order - b.task_order)
+          : [];
+        const currentIndex = isSubtask ? siblingTasks.findIndex(t => t.id === task.id) : -1;
+        const isFirstItem = currentIndex === 0;
+        const isLastItem = currentIndex === siblingTasks.length - 1;
+
         return (
           <Box 
             ref={setRefs}
-            {...((!task.subtasks || task.subtasks.length === 0) ? provided.draggableProps : {})}
+            {...provided.draggableProps}
             sx={{ 
               mb: 1,
               position: 'relative',
               transform: snapshot.isDragging ? 'scale(1.02)' : 'none',
               transition: 'transform 0.2s ease',
               zIndex: snapshot.isDragging ? 1000 : 'auto',
-              // Fix for nested items drag positioning
               marginLeft: isSubtask ? 0 : undefined,
               left: snapshot.isDragging && isSubtask ? 0 : undefined
             }}
@@ -503,13 +596,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                 transform: snapshot.isDragging ? 'rotate(1deg)' : 'none',
                 transition: 'all 0.2s ease',
                 boxShadow: snapshot.isDragging 
-                  ? '0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23)' 
-                  : isDraggedOver 
-                    ? '0 0 0 2px #1976d2' 
-                    : 1,
-                mb: { xs: 1, sm: 2 },
-                mt: { xs: 0.5, sm: 1 },
-                borderRadius: { xs: 2, sm: 2 },
+                  ? '0 8px 16px rgba(0,0,0,0.2)' 
+                  : '0 1px 3px rgba(0,0,0,0.12)'
               }}
             >
               <Stack 
@@ -518,116 +606,176 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                 alignItems={{ xs: 'flex-start', sm: 'center' }} 
                 sx={{ width: '100%' }}
               >
-                {(!task.subtasks || task.subtasks.length === 0) && (
-                  <Box
-                    {...provided.dragHandleProps}
-                    sx={{ 
-                      cursor: 'grab',
-                      display: 'flex',
-                      alignItems: 'center',
-                      color: 'text.secondary',
-                      pr: 0.5,
-                      opacity: 0.5,
-                      '&:hover': { 
-                        opacity: 1,
-                        color: theme.palette.primary.main 
-                      },
-                      '&:active': {
-                        cursor: 'grabbing'
-                      },
-                      touchAction: 'none'
-                    }}
-                    draggable="true"
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('taskId', task.id.toString());
-                    }}
-                  >
-                    <DragIndicatorIcon fontSize="small" />
-                  </Box>
-                )}
-                
-                {(task.subtasks && task.subtasks.length > 0) && (
-                  <Tooltip title="Only tasks without subtasks can be dragged">
-                    <InfoOutlinedIcon color="info" fontSize="small" sx={{ ml: 0.5, opacity: 0.7 }} />
-                  </Tooltip>
-                )}
-                
-                <Checkbox
-                  checked={task.is_completed}
-                  onChange={handleToggleComplete}
-                  color="primary"
-                />
-                
-                {!isEditing ? (
-                  <Box sx={{ flex: 1 }}>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        textDecoration: task.is_completed ? 'line-through' : 'none',
-                        color: task.is_completed ? 'text.secondary' : 'text.primary',
+                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 32 }}>
+                  {(!task.subtasks?.length) && (
+                    <Box
+                      {...provided.dragHandleProps}
+                      data-rbd-drag-handle-draggable-id={`task-${task.id}`}
+                      sx={{ 
+                        cursor: 'grab',
+                        display: {
+                          xs: 'flex',
+                          md: isSubtask ? 'none' : 'flex'
+                        },
+                        alignItems: 'center',
+                        color: 'text.secondary',
+                        pr: 0.5,
+                        opacity: 0.5,
+                        '&:hover': { 
+                          opacity: 1,
+                          color: theme.palette.primary.main 
+                        },
+                        '&:active': {
+                          cursor: 'grabbing'
+                        },
+                        touchAction: 'none'
                       }}
                     >
-                      {task.title}
-                    </Typography>
-                    {task.description && (
-                      <Box sx={{ mt: 0.5 }}>
-                        <ReactMarkdown>{task.description}</ReactMarkdown>
-                      </Box>
-                    )}
-                    
-                    {/* Render special task content */}
-                    {renderSpecialTaskContent()}
-                    
-                    <Typography variant="caption" color="text.secondary">
-                      Type: {task.task_type === 'basic' ? 'Basic' : 
-                            task.task_type === 'work-task' ? 'Work' : 
-                            task.task_type === 'food' ? 'Food' : task.task_type}
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box sx={{ flex: 1 }}>
-                    <TextField
-                      fullWidth
-                      value={editedTitle}
-                      onChange={(e) => setEditedTitle(e.target.value)}
-                      size="small"
-                      sx={{ mb: 1 }}
-                      placeholder="Enter task title"
-                    />
-                    <TextField
-                      fullWidth
-                      value={editedDescription}
-                      onChange={(e) => setEditedDescription(e.target.value)}
-                      multiline
-                      rows={2}
-                      size="small"
-                      sx={{ mb: 1 }}
-                      placeholder="Add a description (Markdown supported)"
-                    />
-                    <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        You can use <b>Markdown</b> formatting in the description.
-                      </Typography>
+                      <DragIndicatorIcon fontSize="small" />
                     </Box>
-                    <FormControl size="small" fullWidth sx={{ mb: 1 }}>
-                      <InputLabel id={`task-type-label-${task.id}`}>Task Type</InputLabel>
-                      <Select
-                        labelId={`task-type-label-${task.id}`}
-                        value={editedTaskType}
-                        label="Task Type"
-                        onChange={(e) => setEditedTaskType(e.target.value as 'basic' | 'work-task' | 'food')}
+                  )}
+                  
+                  {isSubtask && (
+                    <Stack direction="column" spacing={0} sx={{ mr: 0.5 }}>
+                      {!isFirstItem && (
+                        <IconButton
+                          size="small"
+                          onClick={handleMoveUp}
+                          sx={{
+                            p: 0.5,
+                            minWidth: 24,
+                            minHeight: 24,
+                            '&:hover': {
+                              color: theme.palette.primary.main,
+                              backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                            }
+                          }}
+                        >
+                          <KeyboardArrowUpIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      {!isLastItem && (
+                        <IconButton
+                          size="small"
+                          onClick={handleMoveDown}
+                          sx={{
+                            p: 0.5,
+                            minWidth: 24,
+                            minHeight: 24,
+                            '&:hover': {
+                              color: theme.palette.primary.main,
+                              backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                            }
+                          }}
+                        >
+                          <KeyboardArrowDownIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      <Tooltip title="Promote to main task">
+                        <IconButton
+                          size="small"
+                          onClick={handlePromoteToMain}
+                          sx={{
+                            p: 0.5,
+                            minWidth: 24,
+                            minHeight: 24,
+                            '&:hover': {
+                              color: theme.palette.success.main,
+                              backgroundColor: 'rgba(46, 125, 50, 0.08)'
+                            }
+                          }}
+                        >
+                          <ArrowBackIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  )}
+                  
+                  {(task.subtasks && task.subtasks.length > 0) && (
+                    <Tooltip title="Only tasks without subtasks can be dragged">
+                      <InfoOutlinedIcon color="info" fontSize="small" sx={{ ml: 0.5, opacity: 0.7 }} />
+                    </Tooltip>
+                  )}
+                  
+                  <Checkbox
+                    checked={task.is_completed}
+                    onChange={handleToggleComplete}
+                    color="primary"
+                  />
+                </Stack>
+
+                <Box sx={{ flex: 1 }}>
+                  {!isEditing ? (
+                    <>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          textDecoration: task.is_completed ? 'line-through' : 'none',
+                          color: task.is_completed ? 'text.secondary' : 'text.primary',
+                        }}
                       >
-                        <MenuItem value="basic">Basic</MenuItem>
-                        <MenuItem value="work-task">Work</MenuItem>
-                        <MenuItem value="food">Food</MenuItem>
-                      </Select>
-                    </FormControl>
-                    
-                    {/* Render special task edit form */}
-                    {renderSpecialTaskEditForm()}
-                  </Box>
-                )}
-                
+                        {task.title}
+                      </Typography>
+                      {task.description && (
+                        <Box sx={{ mt: 0.5 }}>
+                          <ReactMarkdown>{task.description}</ReactMarkdown>
+                        </Box>
+                      )}
+                      
+                      {/* Render special task content */}
+                      {renderSpecialTaskContent()}
+                      
+                      <Typography variant="caption" color="text.secondary">
+                        Type: {task.task_type === 'basic' ? 'Basic' : 
+                              task.task_type === 'work-task' ? 'Work' : 
+                              task.task_type === 'food' ? 'Food' : task.task_type}
+                      </Typography>
+                    </>
+                  ) : (
+                    <Box sx={{ flex: 1 }}>
+                      <TextField
+                        fullWidth
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        size="small" 
+                        sx={{ mb: 1 }}
+                        placeholder="Enter task title"
+                      />
+                      <TextField
+                        fullWidth
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        multiline
+                        rows={2}
+                        size="small"
+                        sx={{ mb: 1 }}
+                        placeholder="Add a description (Markdown supported)"
+                      />
+                      <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          You can use <b>Markdown</b> formatting in the description.
+                        </Typography>
+                      </Box>
+                      <FormControl size="small" fullWidth sx={{ mb: 1 }}>
+                        <InputLabel id={`task-type-label-${task.id}`}>Task Type</InputLabel>
+                        <Select
+                          labelId={`task-type-label-${task.id}`}
+                          value={editedTaskType}
+                          label="Task Type"
+                          onChange={(e) => setEditedTaskType(e.target.value as 'basic' | 'work-task' | 'food')}
+                        >
+                          <MenuItem value="basic">Basic</MenuItem>
+                          <MenuItem value="work-task">Work</MenuItem>
+                          <MenuItem value="food">Food</MenuItem>
+                        </Select>
+                      </FormControl>
+                      
+                      {/* Render special task edit form */}
+                      {renderSpecialTaskEditForm()}
+                    </Box>
+                  )}
+                </Box>
+
                 <Stack 
                   direction={{ xs: 'row', sm: 'row' }} 
                   spacing={{ xs: 1, sm: 0.5 }}

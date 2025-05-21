@@ -580,9 +580,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
         </Stack>
       </DialogContent>
       <DialogActions>
-        <IconButton color="error"><DeleteIcon /></IconButton>
-        <Button onClick={onClose} color="primary">Close</Button>
-        <Button variant="contained" color="primary" onClick={handleSave}>Save</Button>
+        {!Object.values(editingDescriptions).some(isEditing => isEditing) && (
+          <>
+            <IconButton color="error"><DeleteIcon /></IconButton>
+            <Button onClick={onClose} color="primary">Close</Button>
+            <Button variant="contained" color="primary" onClick={handleSave}>Save</Button>
+          </>
+        )}
       </DialogActions>
     </Dialog>
   );

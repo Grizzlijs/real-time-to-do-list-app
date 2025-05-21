@@ -136,7 +136,7 @@ const HomePage: React.FC = () => {
                     sx={{ 
                       fontWeight: 700, 
                       mb: 3,
-                      fontSize: { xs: '2.5rem', md: '3.5rem' },
+                      fontSize: { xs: '2.5rem', md: '3.2rem' },
                       lineHeight: 1.2,
                       background: 'linear-gradient(90deg, #FFFFFF 0%, #B7D4FF 100%)',
                       backgroundClip: 'text',
@@ -145,7 +145,7 @@ const HomePage: React.FC = () => {
                       textShadow: '0 4px 12px rgba(0,0,0,0.1)',
                     }}
                   >
-                    Real-Time Collaborative Task Management
+                    Smart Task Management with Real-Time Chat
                   </Typography>
                   
                   <Typography 
@@ -159,7 +159,7 @@ const HomePage: React.FC = () => {
                       lineHeight: 1.5
                     }}
                   >
-                    Synchronize your team's productivity with our powerful, real-time to-do list platform that adapts to your workflow.
+                    Create specialized task lists, collaborate in real-time, and chat with your team - all in one powerful platform. Perfect for work, food tracking, and personal organization.
                   </Typography>
                   
                   <Box 
@@ -355,14 +355,14 @@ const HomePage: React.FC = () => {
                   justifyContent: 'center' 
                 }}
               >
-                  <CheckCircleIcon sx={{ fontSize: 64, color: '#fff' }} />
+                  <ListIcon sx={{ fontSize: 64, color: '#fff' }} />
               </CardMedia>
               <CardContent sx={{ p: 3 }}>
                 <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
-                  Track Completion
+                  Specialized Task Types
                 </Typography>
                   <Typography variant="body1" color="text.secondary">
-                  Easily mark tasks as completed, filter by status, and keep track of your team's progress in real-time.
+                  Create different types of tasks including basic tasks, work tasks with deadlines, and food tasks with nutritional information.
                 </Typography>
               </CardContent>
             </Card>
@@ -396,10 +396,10 @@ const HomePage: React.FC = () => {
               </CardMedia>
               <CardContent sx={{ p: 3 }}>
                 <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
-                  Real-Time Collaboration
+                  Per-List Chat & Collaboration
                 </Typography>
                   <Typography variant="body1" color="text.secondary">
-                  Work together seamlessly with your team members. All changes appear instantly for everyone connected to the list.
+                  Chat with team members viewing the same list, see who's online, and collaborate in real-time with instant updates.
                 </Typography>
               </CardContent>
             </Card>
@@ -433,10 +433,10 @@ const HomePage: React.FC = () => {
               </CardMedia>
               <CardContent sx={{ p: 3 }}>
                 <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 600 }}>
-                  Drag & Drop Reordering
+                  Smart Task Organization
                 </Typography>
                   <Typography variant="body1" color="text.secondary">
-                  Easily prioritize tasks by dragging and dropping them into your preferred order. Changes sync instantly across devices.
+                  Drag and drop tasks to reorder, create subtasks, and convert between task types. Filter by status and manage multiple lists.
                 </Typography>
               </CardContent>
             </Card>
@@ -467,15 +467,15 @@ const HomePage: React.FC = () => {
                     mb: 3,
                   }}
                 >
-                  <DevicesIcon fontSize="large" />
+                  <CodeIcon fontSize="large" />
                 </Box>
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                  Cross-Device Sync
-            </Typography>
+                  Markdown Support
+                </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Access your tasks from any device with real-time synchronization
-            </Typography>
-          </Box>
+                  Add rich text formatting to task descriptions with Markdown support
+                </Typography>
+              </Box>
             </Grid>
             
             <Grid item xs={12} sm={6} md={3}>
@@ -501,13 +501,13 @@ const HomePage: React.FC = () => {
                     mb: 3,
                   }}
                 >
-                  <LockIcon fontSize="large" />
+                  <StorageIcon fontSize="large" />
                 </Box>
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                  Secure Sharing
+                  Data Persistence
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Share lists securely with specific team members or make them public
+                  All your tasks are securely stored in PostgreSQL database
                 </Typography>
               </Box>
             </Grid>
@@ -538,10 +538,10 @@ const HomePage: React.FC = () => {
                   <CheckCircleIcon fontSize="large" />
                 </Box>
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                  Smart Filtering
+                  Task Completion
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Filter tasks by status, priority, or custom tags for better organization
+                  Track progress with completion status and filter views
                 </Typography>
               </Box>
             </Grid>
@@ -572,10 +572,10 @@ const HomePage: React.FC = () => {
                   <GroupIcon fontSize="large" />
                 </Box>
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-                  Team Management
+                  User Customization
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Assign tasks to team members and track progress collectively
+                  Set your display name and identify users with unique colors
                 </Typography>
               </Box>
             </Grid>

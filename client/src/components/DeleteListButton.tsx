@@ -6,9 +6,10 @@ import { useTodo } from '../context/TodoContext';
 interface DeleteListButtonProps {
   listId: number;
   listTitle: string;
+  isMobileButton?: boolean;
 }
 
-const DeleteListButton: React.FC<DeleteListButtonProps> = ({ listId, listTitle }) => {
+const DeleteListButton: React.FC<DeleteListButtonProps> = ({ listId, listTitle, isMobileButton }) => {
   const [open, setOpen] = useState(false);
   const { deleteList, isLoading } = useTodo();
 
@@ -38,8 +39,14 @@ const DeleteListButton: React.FC<DeleteListButtonProps> = ({ listId, listTitle }
         color="error"
         sx={{
           borderRadius: 8,
-          px: 2,
+          px: isMobileButton ? { xs: 1, sm: 2 } : 2,
+          minWidth: isMobileButton ? { xs: 40, sm: 90 } : undefined,
+          fontSize: isMobileButton ? { xs: '0.85rem', sm: '1rem' } : undefined,
           transition: 'all 0.2s ease',
+          mb: isMobileButton ? { xs: 1, sm: 0 } : 0,
+          '& .MuiButton-startIcon': {
+            mr: isMobileButton ? { xs: 0, sm: 1 } : 1,
+          },
           '&:hover': {
             transform: 'scale(1.05)',
             backgroundColor: 'error.light',
@@ -47,7 +54,11 @@ const DeleteListButton: React.FC<DeleteListButtonProps> = ({ listId, listTitle }
           }
         }}
       >
-        Delete List
+        {isMobileButton ? (
+          <span style={{ display: 'none', ...((window.innerWidth >= 600) && { display: 'inline' }) }}>Delete List</span>
+        ) : (
+          'Delete List'
+        )}
       </Button>
 
       <Dialog

@@ -155,7 +155,7 @@ const ListPage: React.FC = () => {
               >
                 {currentList.title}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2, flexDirection: 'row' }}>
                 <Button
                   startIcon={<ShareIcon />}
                   onClick={handleShareList}
@@ -163,9 +163,15 @@ const ListPage: React.FC = () => {
                   color="primary"
                   sx={{
                     borderRadius: 8,
-                    px: 2,
+                    px: { xs: 1, sm: 2 },
+                    minWidth: { xs: 40, sm: 90 },
+                    fontSize: { xs: '0.85rem', sm: '1rem' },
                     transition: 'all 0.2s ease',
-                    mr: 1,
+                    mr: { xs: 0, sm: 1 },
+                    mb: { xs: 1, sm: 0 },
+                    '& .MuiButton-startIcon': {
+                      mr: { xs: 0, sm: 1 },
+                    },
                     '&:hover': {
                       transform: 'scale(1.05)',
                       backgroundColor: 'primary.light',
@@ -173,9 +179,9 @@ const ListPage: React.FC = () => {
                     }
                   }}
                 >
-                  Share List
+                  <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>Share List</Box>
                 </Button>
-                <DeleteListButton listId={currentList.id} listTitle={currentList.title} />
+                <DeleteListButton listId={currentList.id} listTitle={currentList.title} isMobileButton />
               </Box>
             </Box>
             <TaskList />

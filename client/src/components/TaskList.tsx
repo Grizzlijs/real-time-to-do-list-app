@@ -143,8 +143,10 @@ const TaskList: React.FC = () => {
     const sourceParentId = parseParentId(source.droppableId);
     const destParentId = parseParentId(destination.droppableId);
     
-    // Force immediate re-render to reflect the pending change
-    setForceRender(prev => prev + 1);
+    // Prevent moving subtasks to root level
+    if (sourceParentId !== null && destParentId === null) {
+      return;
+    }
 
     // Case 1: Task moved to a new parent (or to/from root)
     if (source.droppableId !== destination.droppableId) {
@@ -155,40 +157,30 @@ const TaskList: React.FC = () => {
         task_order: destination.index + 1
       };
       
-      // First update the task's parent
-      updateTaskParent(taskId, destParentId)
-        .then(() => {
-          // Immediately trigger a re-render to show the parent change
-          setForceRender(prev => prev + 1);
-          
-          // After parent update is successful, get the updated tasks at the destination level
-          const tasksAtDestination = tasks
-            .filter(t => t.parent_id === destParentId && t.id !== taskId) // Exclude the moved task as it will be added separately
-            .sort((a, b) => a.task_order - b.task_order);
-          
-          // Create a mutable copy and insert the moved task at the destination index
-          const reorderedDestination = [...tasksAtDestination];
-          reorderedDestination.splice(destination.index, 0, optimisticTask);
-          
-          // Update the task_order property for each task
-          const finalDestination = reorderedDestination.map((t, idx) => ({
-            ...t,
-            task_order: idx + 1,
-            parent_id: destParentId
-          }));
-          
-          // Update the order of tasks at the destination
-          return reorderTasks(finalDestination);
-        })
-        .then(() => {
-          // Force a final re-render after both operations are complete
-          setForceRender(prev => prev + 1);
-        })
-        .catch(error => {
-          // Force re-render even on error to update UI with current state
-          setForceRender(prev => prev + 1);
-        });
-    } else { 
+      // Get the updated tasks at the destination level
+      const tasksAtDestination = tasks
+        .filter(t => t.parent_id === destParentId && t.id !== taskId)
+        .sort((a, b) => a.task_order - b.task_order);
+      
+      // Create a mutable copy and insert the moved task at the destination index
+      const reorderedDestination = [...tasksAtDestination];
+      reorderedDestination.splice(destination.index, 0, optimisticTask);
+      
+      // Update the task_order property for each task
+      const finalDestination = reorderedDestination.map((t, idx) => ({
+        ...t,
+        task_order: idx + 1,
+        parent_id: destParentId
+      }));
+      
+      // Update both parent and order in a single operation
+      Promise.all([
+        updateTaskParent(taskId, destParentId),
+        reorderTasks(finalDestination)
+      ]).catch(error => {
+        console.error('Error updating task:', error);
+      });
+    } else {
       // Case 2: Task reordered within the same parent (or root)
       const parentId = sourceParentId; // Same parent
       
@@ -211,15 +203,9 @@ const TaskList: React.FC = () => {
         parent_id: parentId
       }));
 
-      reorderTasks(tasksToUpdate)
-        .then(() => {
-          // Force a re-render after reordering
-          setForceRender(prev => prev + 1);
-        })
-        .catch(error => {
-          // Force re-render even on error
-          setForceRender(prev => prev + 1);
-        });
+      reorderTasks(tasksToUpdate).catch(error => {
+        console.error('Error reordering tasks:', error);
+      });
     }
   };
 
