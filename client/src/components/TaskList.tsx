@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
-import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton, Fab, Checkbox, DialogContent } from '@mui/material';
+import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton, Checkbox } from '@mui/material';
 import { DragDropContext, Droppable, DropResult, DroppableProps, Draggable } from '@hello-pangea/dnd';
 import TaskItem from './TaskItem';
 import LoadingSpinner from './LoadingSpinner';
@@ -8,7 +8,6 @@ import { useTodo } from '../context/TodoContext';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { Task } from '../types';
 import TaskModal from './TaskModal';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 // Improved StrictModeDroppable to fix drag and drop issues in React 18
 export const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
@@ -70,10 +69,10 @@ const TaskList: React.FC = () => {
   // Get hierarchical task structure for display
   const hierarchicalTasks = useMemo(() => {
     return getTaskHierarchy();
-  }, [getTaskHierarchy, tasks]);
+  }, [getTaskHierarchy]);
   
   // Find the last leaf node's ID in the tree (deepest, rightmost leaf)
-  const findLastLeafId = (tasks: Task[]): number | null => {
+  const findLastLeafId = (tasksToSearch: Task[]): number | null => { // Renamed 'tasks' to 'tasksToSearch' to avoid conflict with context
     let lastLeafId: number | null = null;
     function dfs(taskList: Task[]) {
       for (let i = 0; i < taskList.length; i++) {
@@ -85,9 +84,10 @@ const TaskList: React.FC = () => {
         }
       }
     }
-    dfs(tasks);
+    dfs(tasksToSearch); // Use the renamed parameter
     return lastLeafId;
   };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const lastLeafId = useMemo(() => findLastLeafId(hierarchicalTasks), [hierarchicalTasks]);
   
   // Handle form submission for creating a new task

@@ -39,7 +39,7 @@ const ListPage: React.FC = () => {
 
   // Log online users when they change
   useEffect(() => {
-    console.log('ListPage received onlineUsers:', onlineUsers);
+    // console.log('ListPage received onlineUsers:', onlineUsers);
   }, [onlineUsers]);
 
   useEffect(() => {

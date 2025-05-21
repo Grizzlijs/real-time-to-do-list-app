@@ -46,7 +46,7 @@ const StyledBox = styled(Box)(({ theme }) => ({
 }));
 
 const OnlineUsers: React.FC<OnlineUsersProps> = ({ users }) => {
-  console.log('Rendering OnlineUsers component with users:', users);
+  // console.log('Rendering OnlineUsers component with users:', users);
 
   // Sort users by name for a better UX
   const sortedUsers = users.sort((a, b) => a.name.localeCompare(b.name));

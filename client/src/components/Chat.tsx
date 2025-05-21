@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Box, 
   TextField, 
@@ -195,4 +195,4 @@ const Chat: React.FC<ChatProps> = ({ messages, onSendMessage, currentUser }) => 
   );
 };
 
-export default Chat; 
+export default Chat;

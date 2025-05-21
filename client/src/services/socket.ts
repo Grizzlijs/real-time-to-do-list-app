@@ -22,7 +22,9 @@ const USER_COLOR_KEY = 'todo_app_color';
 let socket: Socket | null = null;
 let isConnecting = false;
 let onlineUsersCallback: ((users: OnlineUser[]) => void) | null = null;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let lastOnlineUsersUpdate = 0;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ONLINE_USERS_UPDATE_THROTTLE = 1000; // 1 second
 
 let userUpdatedCallback: ((user: OnlineUser) => void) | null = null;

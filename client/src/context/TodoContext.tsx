@@ -25,7 +25,7 @@ interface TodoContextProps {
   isUsernameDialogOpen: boolean;
   setUsernameDialogOpen: (open: boolean) => void;
   setUserInfo: (username: string, color: string) => void;
-  loadLists: () => Promise<void>;
+  loadLists: () => Promise<void>; // This is the type definition
   loadListBySlug: (slug: string) => Promise<void>;
   createNewList: (title: string) => Promise<TodoList>;
   deleteList: (id: number) => Promise<void>;  createTask: (title: string, parentId?: number | null, cost?: number | null, taskType?: string, specialFields?: any) => Promise<void>;
@@ -73,31 +73,61 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState<boolean>(false);
 
+  const loadLists = useCallback(async () => {
+    // console.log("loadLists called");
+    setIsLoading(true);
+    try {
+      const fetchedLists = await api.getLists();
+      // console.log("Fetched lists:", fetchedLists);
+      setLists(fetchedLists);
+      setError(null);
+    } catch (err) {
+      console.error("Error loading lists:", err);
+      setError('Failed to load lists.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []); // Dependencies are correct for a stable function
+
   // Load lists when the provider mounts
   useEffect(() => {
     loadLists();
-  }, []);
+  }, [loadLists]); // loadLists is now correctly referenced
 
-  // Initialize socket connection
+  // Initialize socket connection & global online users listener
   useEffect(() => {
     const initSocket = () => {
       if (!socketService.getSocket()) {
-        console.log('Initializing socket connection in TodoContext');
+        // console.log('Initializing socket connection in TodoContext');
         socketService.initSocket();
       }
     };
-
     initSocket();
 
-    // Set up global online users listener
-    socketService.getOnlineUsers((users) => {
-      console.log('Received global online users update:', users);
+    const handleAllOnlineUsers = (users: OnlineUser[]) => {
       setAllOnlineUsers(users);
-    });
+    };
+
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on('online-users', handleAllOnlineUsers);
+    }
+
+    // Listener for socket connection
+    const handleConnect = () => {
+      const userInfo = socketService.getUserInfo();
+      setCurrentUser(userInfo);
+      socketService.getSocket()?.emit('get-online-users');
+    };
+
+    if (socket) {
+      socket.on('connect', handleConnect);
+    }
 
     return () => {
-      if (socketService.getSocket()) {
-        socketService.getSocket()!.off('online-users');
+      if (socket) {
+        socket.off('online-users', handleAllOnlineUsers);
+        socket.off('connect', handleConnect);
       }
     };
   }, []);
@@ -105,72 +135,56 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   // Effect for handling global user updates (name/color changes) from socket
   useEffect(() => {
     const handleUserUpdate = (updatedUser: OnlineUser) => {
-      console.log('Received user-updated event in context:', updatedUser);
       setAllOnlineUsers(prevUsers =>
         prevUsers.map(u => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
       );
-      // Also update listOnlineUsers if the user is in the current list's context
-      setListOnlineUsers(prevUsers =>
-        prevUsers.map(u => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
-      );
-      setCurrentUser(prevCurrentUser =>
-        prevCurrentUser && prevCurrentUser.id === updatedUser.id
-          ? { ...prevCurrentUser, ...updatedUser }
-          : prevCurrentUser
-      );
+      // No need to update listOnlineUsers or currentUser here directly,
+      // as they will be updated via allOnlineUsers or specific events.
     };
 
     socketService.onUserUpdated(handleUserUpdate);
 
     return () => {
-      socketService.offUserUpdated(); // Clean up the listener
+      socketService.offUserUpdated();
     };
-  }, []); // Runs once on mount to register the handler
+  }, []);
 
-  // Set up list-specific online users listener when currentList changes
+  // Derive listOnlineUsers from allOnlineUsers and currentList
   useEffect(() => {
     if (currentList) {
-      console.log('Setting up list-specific online users listener for list:', currentList.id);
-      socketService.getOnlineUsers((users) => {
-        console.log('Received list-specific online users update:', users);
-        const listUsers = users.filter(user => user.listId === String(currentList.id));
-        setListOnlineUsers(listUsers);
-      });
+      const filteredListUsers = allOnlineUsers.filter(
+        user => user.listId === String(currentList.id)
+      );
+      setListOnlineUsers(filteredListUsers);
     } else {
       setListOnlineUsers([]);
     }
+  }, [allOnlineUsers, currentList]);
 
-    return () => {
-      if (socketService.getSocket()) {
-        socketService.getSocket()!.off('online-users');
-      }
-    };
-  }, [currentList]);
 
-  // Socket event handlers
   const handleTaskCreated = useCallback((data: { listId: number; task: Task }) => {
-    console.log('Received task-created event for list', data.listId, data.task);
+    // console.log('Received task-created event for list', data.listId, data.task);
     if (currentList && currentList.id === data.listId) {
       setTasks(prevTasks => {
         // Check if task already exists
         const taskExists = prevTasks.some(task => task.id === data.task.id);
         if (taskExists) {
-          console.log('Task already exists in state from socket event, skipping update', data.task.id);
+          // console.log('Task already exists in state from socket event, skipping update', data.task.id);
           return prevTasks;
         }
-        console.log('Adding new task from socket event', data.task);
+        // console.log('Adding new task from socket event', data.task);
         return [...prevTasks, data.task];
       });
     }
   }, [currentList]);
 
   const handleTaskUpdated = useCallback((data: { listId: number; task: Task }) => {
-    console.log('Received task-updated event for list', data.listId, data.task);
+    // console.log('Received task-updated event for list', data.listId, data.task);
     if (currentList && currentList.id === data.listId) {
       setTasks(prevTasks => {
         const taskExists = prevTasks.some(task => task.id === data.task.id);
         if (taskExists) {
-          console.log('Updating existing task from socket event', data.task);
+          // console.log('Updating existing task from socket event', data.task);
           // Create a new array to trigger re-render
           return prevTasks.map(task => {
             if (task.id === data.task.id) {
@@ -179,7 +193,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
               // Use subtasks from socket if provided, otherwise keep existing
               const updatedSubtasks = data.task.subtasks || existingSubtasks;
               
-              console.log(`Task ${task.id} update: parent changed from ${task.parent_id} to ${data.task.parent_id}`);
+              // console.log(`Task ${task.id} update: parent changed from ${task.parent_id} to ${data.task.parent_id}`);
               
               // Preserve subtasks while updating other properties
               return {
@@ -197,7 +211,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
               const taskExists = existingSubtasks.some(st => st.id === data.task.id);
               
               if (!taskExists) {
-                console.log(`Adding task ${data.task.id} to parent ${task.id}'s subtasks`);
+                // console.log(`Adding task ${data.task.id} to parent ${task.id}'s subtasks`);
                 // Add the task to the parent's subtasks
                 return {
                   ...task,
@@ -209,7 +223,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
             // If this was the old parent and the task was moved to a new parent
             if (task.subtasks && task.subtasks.some(st => st.id === data.task.id) && 
                 data.task.parent_id !== task.id) {
-              console.log(`Removing task ${data.task.id} from old parent ${task.id}'s subtasks`);
+              // console.log(`Removing task ${data.task.id} from old parent ${task.id}'s subtasks`);
               // Remove the task from this parent's subtasks
               return {
                 ...task,
@@ -220,158 +234,103 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
             return task;
           });
         }
-        console.log('Task not found for update, adding it', data.task.id);
+        // console.log('Task not found for update, adding it', data.task.id);
         return [...prevTasks, data.task];
       });
     }
   }, [currentList]);
 
   const handleTaskDeleted = useCallback((data: { listId: number; taskId: number }) => {
-    console.log('Received task-deleted event for list', data.listId, data);
+    // console.log('Received task-deleted event for list', data.listId, data);
     if (currentList && currentList.id === data.listId) {
       setTasks(prevTasks => {
         const taskExists = prevTasks.some(task => task.id === data.taskId);
         if (taskExists) {
-          console.log('Removing task from socket event', data.taskId);
+          // console.log('Removing task from socket event', data.taskId);
           return prevTasks.filter(task => task.id !== data.taskId);
         }
-        console.log('Task already removed, no action needed', data.taskId);
+        // console.log('Task already removed, no action needed', data.taskId);
         return prevTasks;
       });
     }
   }, [currentList]);
 
-  // Wait for socket to connect before setting up listeners
-  useEffect(() => {
-    socketService.getSocket()?.on('connect', () => {
-      console.log('Socket connected, setting up listeners');
-      // Set current user info
-      const userInfo = socketService.getUserInfo();
-      console.log('Setting current user:', userInfo);
-      setCurrentUser(userInfo);
-      
-      // Request initial online users list
-      socketService.getSocket()?.emit('get-online-users');
-    });
-  }, []);
-
-  // Set up socket event listeners for tasks and list-specific users
+  // Set up socket event listeners for tasks and list-specific events (like chat)
   useEffect(() => {
     if (!currentList) return;
 
     const socket = socketService.getSocket();
-    if (!socket?.connected) {
-      console.log('Socket not connected, waiting for connection...');
-      socket?.on('connect', () => {
-        if (currentList) {
-          console.log(`Socket connected, setting up listeners for list ID: ${currentList.id}`);
-          setupListListeners();
-        }
-      });
-      return;
-    }
 
-    setupListListeners();
+    const setupListSpecificListeners = () => {
+      if (!currentList || !socket?.connected) return;
 
-    function setupListListeners() {
-      if (!currentList) return;
-      
-      // Join list room
       socketService.joinList(currentList.id);
 
-      // Set up online users listener for this specific list
-      const socket = socketService.getSocket();
-      if (socket) {
-        // Remove existing listeners first to prevent duplicates
-        socket.off('online-users');
-        socket.off('chat-message');
-        
-        console.log(`Setting up socket listeners for list ${currentList.id}`);
-        
-        socket.on('online-users', (users: OnlineUser[]) => {
-          console.log(`Received online users update for list ${currentList.id}:`, users);
-          // Filter users who are in this specific list
-          const listUsers = users.filter(user => user.listId === String(currentList.id));
-          setListOnlineUsers(listUsers);
-        });
+      // Chat message listener
+      const handleChatMessage = (message: ChatMessage) => {
+        setMessages(prev => [...prev, message]);
+      };
+      socket.on('chat-message', handleChatMessage);
 
-        // Set up chat message listener
-        socket.on('chat-message', (message: ChatMessage) => {
-          console.log(`Received chat message for list ${currentList.id}:`, message);
-          setMessages(prev => [...prev, message]);
-        });
-      }
-
-      // Remove existing task listeners first to prevent duplicates
-      socketService.offTaskCreated(handleTaskCreated);
-      socketService.offTaskUpdated(handleTaskUpdated);
-      socketService.offTaskDeleted(handleTaskDeleted);
-      
-      // Set up task listeners
-      console.log(`Setting up task listeners for list ${currentList.id}`);
+      // Task listeners
       socketService.onTaskCreated(handleTaskCreated);
       socketService.onTaskUpdated(handleTaskUpdated);
       socketService.onTaskDeleted(handleTaskDeleted);
 
-      // Set up tasks reordered listener
       socketService.onTasksReordered(({ listId, tasks: updatedTasks }) => {
-        console.log(`Received tasks-reordered event for list ${listId}`, { count: updatedTasks.length });
         if (currentList && currentList.id === Number(listId)) {
-          console.log('Updating tasks order from socket event');
-          
-          // Inspect the updated tasks to see if they include subtasks
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const updatedTasksHaveParents = updatedTasks.some(t => t.parent_id !== null);
-          console.log('Updated tasks have parents:', updatedTasksHaveParents);
-          
           setTasks(prevTasks => {
-            // Create a map of updated tasks by ID for quick lookup
             const updatedTasksMap = new Map(updatedTasks.map(t => [t.id, t]));
-            
-            // Updated copy of tasks
             const newTasks = prevTasks.map(task => {
               const updatedTask = updatedTasksMap.get(task.id);
               if (updatedTask) {
-                console.log(`Updating task ${task.id} from socket reorder event`);
-                // Merge the updated task with the existing task, preserving subtasks
-                return { 
-                  ...task, 
-                  ...updatedTask,
-                  subtasks: task.subtasks || [] 
-                };
+                return { ...task, ...updatedTask, subtasks: task.subtasks || [] };
               }
-              // If this task wasn't updated, return it unchanged
               return task;
             });
-            
-            // Log the new hierarchy that will be created
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const rootCount = newTasks.filter(t => !t.parent_id).length;
-            console.log(`After reorder update: ${rootCount} root tasks, ${newTasks.length} total tasks`);
-            
             return newTasks;
           });
         }
       });
-    }
 
-    return () => {
-      if (currentList) {
-        console.log(`Cleaning up socket listeners for list ID: ${currentList.id}`);
-        socketService.leaveList(currentList.id);
-        const socket = socketService.getSocket();
-        if (socket) {
-          socket.off('online-users');
-          socket.off('chat-message');
-        }
-        // Clean up socket event listeners
+      // Return cleanup for these specific listeners
+      return () => {
+        socket.off('chat-message', handleChatMessage);
         socketService.offTaskCreated(handleTaskCreated);
         socketService.offTaskUpdated(handleTaskUpdated);
         socketService.offTaskDeleted(handleTaskDeleted);
-        socketService.offAllListeners();
-        setMessages([]); // Clear messages when leaving a list
-        setListOnlineUsers([]); // Clear list-specific online users
+        // Consider if offTasksReordered is needed from socketService
+        socketService.getSocket()?.off('tasks-reordered'); // Assuming this is how to turn it off
+        socketService.leaveList(currentList.id);
+      };
+    };
+
+    let listListenersCleanup: (() => void) | undefined;
+
+    if (socket?.connected) {
+      listListenersCleanup = setupListSpecificListeners();
+    } else {
+      socket?.once('connect', () => { // Use once for connect to avoid multiple setups if connect fires multiple times
+        listListenersCleanup = setupListSpecificListeners();
+      });
+    }
+
+    return () => {
+      if (listListenersCleanup) {
+        listListenersCleanup();
+      }
+      // The broad socketService.offAllListeners(); is removed from here.
+      // Individual listeners are managed more granularly.
+      if (currentList) { // Minimal cleanup if listeners weren't fully set up
+          setMessages([]);
+          // listOnlineUsers will be cleared by the derivative useEffect when currentList becomes null
       }
     };
-  }, [currentList?.id, handleTaskCreated, handleTaskUpdated, handleTaskDeleted]);
+  }, [currentList, handleTaskCreated, handleTaskUpdated, handleTaskDeleted]); // currentList.id was removed as currentList object change is sufficient
 
   // Calculate filtered tasks based on filter state
   const filteredTasks = tasks.filter(task => {
@@ -380,21 +339,6 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     if (filter === 'completed') return task.is_completed;
     return true;
   });
-
-  // Load all todo lists
-  const loadLists = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await api.getLists();
-      setLists(data);
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Failed to load lists:', err);
-      setError('Failed to load lists');
-      setIsLoading(false);
-    }
-  }, []);
 
   // Load a specific list by slug and its tasks
   const loadListBySlug = useCallback(async (slug: string) => {
@@ -548,7 +492,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         // Check if task already exists
         const taskExists = prevTasks.some(task => task.id === newTask.id);
         if (taskExists) {
-          console.log('Task already exists in state, skipping update', newTask.id);
+          // console.log('Task already exists in state, skipping update', newTask.id);
           return prevTasks;
         }
 
@@ -691,68 +635,53 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
 
   // Create a hierarchical task structure with subtasks
   const getTaskHierarchy = useCallback(() => {
-    // Create a log of all tasks for debugging
-    console.log('Building task hierarchy from tasks:', tasks.map(t => ({
-      id: t.id,
-      title: t.title,
-      parent: t.parent_id,
-      order: t.task_order
-    })));
-    
-    // Create a map for quick task lookups
-    const taskMap = new Map<number, Task>();
-    const rootTasks: Task[] = [];
-    
-    // First pass: create a map of all tasks with empty subtask arrays
+    // console.log('Building task hierarchy from tasks:', tasks.map(t => ({ id: t.id, title: t.title, parent: t.parent_id, order: t.task_order })));
+
+    const taskMap = new Map<number, Task & { subtasks: Task[] }>();
+    const rootTasks: (Task & { subtasks: Task[] })[] = [];
+
+    // First pass: Initialize all tasks in the map with empty subtask arrays.
+    // Sort tasks by order initially to help with deterministic processing.
     const sortedTasks = [...tasks].sort((a, b) => a.task_order - b.task_order);
+
     sortedTasks.forEach(task => {
-      const taskWithSubtasks = { ...task, subtasks: [] };
-      taskMap.set(task.id, taskWithSubtasks);
+      taskMap.set(task.id, { ...task, subtasks: [] });
     });
-    
-    // Second pass: build the hierarchy
+
+    // Second pass: Populate the subtask arrays and identify root tasks.
     sortedTasks.forEach(task => {
-      const taskWithSubtasks = taskMap.get(task.id);
-      if (!taskWithSubtasks) return; // Skip if task doesn't exist in map
-      
-      if (task.parent_id === null || task.parent_id === undefined) {
-        // This is a root task
-        rootTasks.push(taskWithSubtasks);
+      // currentTaskNode is guaranteed to be in the map and have subtasks: []
+      const currentTaskNode = taskMap.get(task.id)!; 
+
+      if (currentTaskNode.parent_id === null || currentTaskNode.parent_id === undefined) {
+        rootTasks.push(currentTaskNode);
       } else {
-        // This is a subtask
-        const parentTask = taskMap.get(task.parent_id);
-        if (parentTask) {
-          if (!parentTask.subtasks) {
-            parentTask.subtasks = [];
-          }
-          parentTask.subtasks.push(taskWithSubtasks);
-          
-          // Sort subtasks by order
-          parentTask.subtasks.sort((a, b) => a.task_order - b.task_order);
+        const parentTaskNode = taskMap.get(currentTaskNode.parent_id);
+        if (parentTaskNode) {
+          // parentTaskNode is also from the map, so its subtasks array is initialized.
+          parentTaskNode.subtasks.push(currentTaskNode);
         } else {
-          // If parent doesn't exist, treat as a root task
-          console.warn(`Parent task ${task.parent_id} not found for task ${task.id} (${task.title}). Treating as root task.`);
-          // Remove the parent_id since it doesn't exist
-          taskWithSubtasks.parent_id = null;
-          rootTasks.push(taskWithSubtasks);
+          console.warn(`Parent task ${currentTaskNode.parent_id} not found for task ${currentTaskNode.id} (${currentTaskNode.title}). Treating as root task.`);
+          currentTaskNode.parent_id = null; // Correct its parent_id
+          rootTasks.push(currentTaskNode); // Add as a root task
         }
       }
     });
-    
-    // Sort root tasks by order
-    const result = rootTasks.sort((a, b) => a.task_order - b.task_order);
-    
-    // Log the final hierarchy for debugging
-    console.log('Task hierarchy built:', {
-      rootCount: result.length,
-      rootTasks: result.map(t => ({
-        id: t.id,
-        title: t.title,
-        subtaskCount: t.subtasks?.length || 0
-      }))
+
+    // Third pass: Sort subtasks for each task in the hierarchy.
+    // This ensures that subtasks within each parent are ordered correctly according to their task_order.
+    taskMap.forEach(taskNode => {
+      if (taskNode.subtasks.length > 1) { // Only sort if there's more than one subtask
+        taskNode.subtasks.sort((a, b) => a.task_order - b.task_order);
+      }
     });
+
+    // Finally, sort the root tasks themselves by task_order.
+    rootTasks.sort((a, b) => a.task_order - b.task_order);
     
-    return result;
+    // console.log('Task hierarchy built:', { rootCount: rootTasks.length, rootTasks: rootTasks.map(t => ({ id: t.id, title: t.title, subtaskCount: t.subtasks?.length || 0 })) });
+    
+    return rootTasks;
   }, [tasks]);
 
   // Update task parent
@@ -923,13 +852,13 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         };
       });
       
-      console.log('Emitting tasks-reorder event with updated tasks:', tasksForSocketEvent.length);
+      // console.log('Emitting tasks-reorder event with updated tasks:', tasksForSocketEvent.length);
       socketService.emitTasksReorder(currentList.id, tasksForSocketEvent);
       
       // Now update on server - this is asynchronous
-      console.log('Sending task order update to server');
+      // console.log('Sending task order update to server');
       await api.updateTasksOrder(currentList.id, taskOrderData);
-      console.log('Server updated task orders successfully');
+      // console.log('Server updated task orders successfully');
     } catch (err) {
       console.error('Failed to reorder tasks:', err);
       setError('Failed to reorder tasks');

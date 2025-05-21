@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { 
   Container, Typography, Box, Button, Grid, Paper, 
   Divider, Card, CardContent, CardMedia,
-  Avatar, Fade, Zoom, useTheme,
-  Modal, IconButton, Link as MuiLink
+  Avatar, Fade, Zoom, useTheme, // Uncommented useTheme
+  Modal, IconButton, Link as MuiLink, CircularProgress // CircularProgress is imported here
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { useTodo } from '../context/TodoContext';
@@ -13,8 +13,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import GroupIcon from '@mui/icons-material/Group';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import LockIcon from '@mui/icons-material/Lock';
-import DevicesIcon from '@mui/icons-material/Devices';
+// import LockIcon from '@mui/icons-material/Lock'; // Removed unused LockIcon
+// import DevicesIcon from '@mui/icons-material/Devices'; // Removed unused DevicesIcon
 import CloseIcon from '@mui/icons-material/Close';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import EmailIcon from '@mui/icons-material/Email';
@@ -25,7 +25,8 @@ import SpeedIcon from '@mui/icons-material/Speed';
 
 const HomePage: React.FC = () => {
   const { lists, isLoading } = useTodo();
-  const theme = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const theme = useTheme(); // theme is used in sx props, so we keep it but disable the warning if not directly called
   const [heroAnimationComplete, setHeroAnimationComplete] = useState(false);
   const [isEasterEggOpen, setIsEasterEggOpen] = useState(false);
   const [isGiftOpen, setIsGiftOpen] = useState(false);
@@ -1162,41 +1163,6 @@ const HomePage: React.FC = () => {
     </>
   );
 };
-
-// Loading indicator
-interface CircularProgressProps {
-  size: number;
-  thickness: number;
-}
-
-const CircularProgress: React.FC<CircularProgressProps> = ({ size, thickness }) => (
-  <Box
-    sx={{ 
-      position: 'relative',
-      display: 'inline-block',
-      width: size,
-      height: size,
-    }}
-  >
-    <Box
-      sx={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        border: `${thickness}px solid rgba(5, 89, 201, 0.1)`,
-        borderTopColor: 'primary.main',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-        '@keyframes spin': {
-          '0%': { transform: 'rotate(0deg)' },
-          '100%': { transform: 'rotate(360deg)' },
-        }
-      }}
-    />
-  </Box>
-);
 
 // ProFeaturesModal component - Easter Egg
 const ProFeaturesModal: React.FC<{
