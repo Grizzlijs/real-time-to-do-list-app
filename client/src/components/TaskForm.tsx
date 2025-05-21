@@ -69,11 +69,15 @@ const TaskForm: React.FC = () => {
             onChange={(e) => setNewTaskTitle(e.target.value)}
             variant="outlined"
             size="small"
+            id="task-title"
+            name="task-title"
           />
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel id="task-type-label">Task Type</InputLabel>
             <Select
               labelId="task-type-label"
+              id="task-type"
+              name="task-type"
               value={taskType}
               label="Task Type"
               onChange={(e) => setTaskType(e.target.value as 'basic' | 'work-task' | 'food')}
@@ -102,6 +106,8 @@ const TaskForm: React.FC = () => {
               }}
               required
               size="small"
+              id="task-deadline"
+              name="task-deadline"
             />
           </Box>
         )}
@@ -123,6 +129,8 @@ const TaskForm: React.FC = () => {
                   onChange={(e) => setCarbohydrate(e.target.value)}
                   required
                   size="small"
+                  id="task-carbohydrate"
+                  name="task-carbohydrate"
                 />
               </Grid>
               <Grid item xs={4}>
@@ -135,6 +143,8 @@ const TaskForm: React.FC = () => {
                   onChange={(e) => setProtein(e.target.value)}
                   required
                   size="small"
+                  id="task-protein"
+                  name="task-protein"
                 />
               </Grid>
               <Grid item xs={4}>
@@ -147,6 +157,8 @@ const TaskForm: React.FC = () => {
                   onChange={(e) => setFat(e.target.value)}
                   required
                   size="small"
+                  id="task-fat"
+                  name="task-fat"
                 />
               </Grid>
               <Grid item xs={12}>
@@ -156,6 +168,8 @@ const TaskForm: React.FC = () => {
                   value={picture}
                   onChange={(e) => setPicture(e.target.value)}
                   size="small"
+                  id="task-picture"
+                  name="task-picture"
                 />
               </Grid>
             </Grid>

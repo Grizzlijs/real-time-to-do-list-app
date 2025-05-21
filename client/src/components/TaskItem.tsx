@@ -270,6 +270,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
             disabled={isSubmittingSubtask}
             autoFocus
             sx={{ fontSize: { xs: '1rem', sm: 'inherit' } }}
+            id={`subtask-title-${task.id}`}
+            name={`subtask-title-${task.id}`}
           />
           <IconButton 
             onClick={handleAddSubtask} 
@@ -701,6 +703,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                     checked={task.is_completed}
                     onChange={handleToggleComplete}
                     color="primary"
+                    id={`task-checkbox-${task.id}`}
+                    name={`task-checkbox-${task.id}`}
+                    inputProps={{
+                      'aria-label': `Mark ${task.title} as ${task.is_completed ? 'incomplete' : 'complete'}`
+                    }}
                   />
                 </Stack>
 
@@ -740,6 +747,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                         size="small" 
                         sx={{ mb: 1 }}
                         placeholder="Enter task title"
+                        id={`edit-task-title-${task.id}`}
+                        name={`edit-task-title-${task.id}`}
                       />
                       <TextField
                         fullWidth
@@ -750,6 +759,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                         size="small"
                         sx={{ mb: 1 }}
                         placeholder="Add a description (Markdown supported)"
+                        id={`edit-task-description-${task.id}`}
+                        name={`edit-task-description-${task.id}`}
                       />
                       <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="caption" color="text.secondary">

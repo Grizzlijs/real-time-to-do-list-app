@@ -275,6 +275,8 @@ const TaskList: React.FC = () => {
                   size={window.innerWidth < 600 ? 'medium' : 'small'}
                   disabled={isAddingTask}
                   sx={{ fontSize: { xs: '1rem', sm: 'inherit' } }}
+                  id="new-task-title"
+                  name="new-task-title"
                 />
                 <Button 
                   type="submit" 
@@ -384,6 +386,11 @@ const TaskList: React.FC = () => {
                                 checked={task.is_completed} 
                                 sx={{ mr: 1 }} 
                                 onClick={e => { e.stopPropagation(); updateTask(task.id, { is_completed: !task.is_completed }); }}
+                                id={`mobile-task-checkbox-${task.id}`}
+                                name={`mobile-task-checkbox-${task.id}`}
+                                inputProps={{
+                                  'aria-label': `Mark ${task.title} as ${task.is_completed ? 'incomplete' : 'complete'}`
+                                }}
                               />
                               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0 }}>
                                 <Typography sx={{ fontSize: '1.1rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</Typography>

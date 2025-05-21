@@ -3,6 +3,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import taskRoutes from './routes/taskRoutes';
 import listRoutes from './routes/listRoutes';
 import { setupSocketHandlers } from './utils/socket';
@@ -16,15 +17,44 @@ const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://192.168.8.238:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
   }
 });
 
 // Middlewares
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://192.168.8.238:3000',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Add cookie parser middleware
+app.use(cookieParser());
+
+// Add cookie configuration
+app.use((req, res, next) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isHttps = req.protocol === 'https';
+  
+  // Only set cookie if it doesn't exist
+  if (!req.cookies.session) {
+    const cookieOptions = {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/',
+      // In production, require secure and sameSite=none
+      // In development, only require secure if using HTTPS
+      secure: isProduction || isHttps,
+      sameSite: isProduction ? 'none' as const : 'lax' as const
+    };
+
+    res.cookie('session', Date.now().toString(), cookieOptions);
+  }
+  next();
+});
+
 app.use(express.json());
 
 // Routes

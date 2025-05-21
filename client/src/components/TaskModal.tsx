@@ -303,6 +303,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
                   fullWidth
                   size="small"
                   sx={{ mb: 1 }}
+                  id={`modal-subtask-description-${subtask.id}`}
+                  name={`modal-subtask-description-${subtask.id}`}
                 />
                 <Stack direction="row" spacing={1} alignItems="center">
                   <IconButton size="small" onClick={async () => {
@@ -360,6 +362,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
                   fullWidth
                   disabled={isSubmittingSubtask}
                   autoFocus
+                  id={`modal-new-subtask-title-${subtask.id}`}
+                  name={`modal-new-subtask-title-${subtask.id}`}
                 />
                 <IconButton
                   onClick={handleAddSubtask}
@@ -436,11 +440,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
             onChange={(e) => handleTitleChange(e.target.value)}
             fullWidth
             variant="outlined"
+            id="modal-task-title"
+            name="modal-task-title"
           />
           <FormControl fullWidth>
             <InputLabel id="task-type-label">Task Type</InputLabel>
             <Select
               labelId="task-type-label"
+              id="modal-task-type"
+              name="modal-task-type"
               value={localTask.task_type}
               label="Task Type"
               onChange={e => setLocalTask(prev => prev ? { ...prev, task_type: e.target.value as "basic" | "work-task" | "food" } : null)}
@@ -467,6 +475,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
               onChange={e => editingMainDescription ? setMainDescriptionDraft(e.target.value) : undefined}
               fullWidth
               sx={{ mb: 1 }}
+              id="modal-task-description"
+              name="modal-task-description"
               InputProps={{
                 readOnly: !editingMainDescription,
               }}
@@ -494,6 +504,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
               fullWidth
               InputLabelProps={{ shrink: true }}
               variant="outlined"
+              id="modal-task-deadline"
+              name="modal-task-deadline"
             />
           )}
           {localTask.task_type === 'food' && (
@@ -505,6 +517,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
                 onChange={e => setLocalTask(prev => prev ? { ...prev, carbohydrate: parseFloat(e.target.value) || 0 } : null)}
                 fullWidth
                 variant="outlined"
+                id="modal-task-carbohydrate"
+                name="modal-task-carbohydrate"
               />
               <TextField
                 label="Protein (g/100g)"
@@ -513,6 +527,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
                 onChange={e => setLocalTask(prev => prev ? { ...prev, protein: parseFloat(e.target.value) || 0 } : null)}
                 fullWidth
                 variant="outlined"
+                id="modal-task-protein"
+                name="modal-task-protein"
               />
               <TextField
                 label="Fat (g/100g)"
@@ -521,6 +537,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
                 onChange={e => setLocalTask(prev => prev ? { ...prev, fat: parseFloat(e.target.value) || 0 } : null)}
                 fullWidth
                 variant="outlined"
+                id="modal-task-fat"
+                name="modal-task-fat"
               />
               <TextField
                 label="Picture URL (optional)"
@@ -528,6 +546,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
                 onChange={e => setLocalTask(prev => prev ? { ...prev, picture: e.target.value } : null)}
                 fullWidth
                 variant="outlined"
+                id="modal-task-picture"
+                name="modal-task-picture"
               />
             </>
           )}

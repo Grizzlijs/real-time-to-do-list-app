@@ -3,6 +3,9 @@ import { Task, TaskCreateDTO, TaskUpdateDTO, TodoList, ListCreateDTO } from '../
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
+// Configure axios defaults
+axios.defaults.withCredentials = true;
+
 // List API endpoints
 export const getLists = async (): Promise<TodoList[]> => {
   const response = await axios.get(`${API_URL}/api/lists`);

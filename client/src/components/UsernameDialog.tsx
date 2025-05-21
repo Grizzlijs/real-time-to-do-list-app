@@ -91,6 +91,8 @@ const UsernameDialog: React.FC<UsernameDialogProps> = ({
           label="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          id="username-input"
+          name="username-input"
           InputProps={{
             startAdornment: (
               <Avatar 
