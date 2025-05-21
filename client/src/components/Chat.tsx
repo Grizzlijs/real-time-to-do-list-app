@@ -89,15 +89,7 @@ const InputContainer = styled(Box)(({ theme }) => ({
 
 const Chat: React.FC<ChatProps> = ({ messages, onSendMessage, currentUser }) => {
   const [newMessage, setNewMessage] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const messagesListRef = useRef<HTMLUListElement>(null);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +119,7 @@ const Chat: React.FC<ChatProps> = ({ messages, onSendMessage, currentUser }) => 
         Chat
       </Typography>
       
-      <MessagesList>
+      <MessagesList ref={messagesListRef}>
         {messages.map((message) => (
           <MessageItem key={message.id}>
             <MessageAvatar usercolor={message.sender.color}>
@@ -165,7 +157,6 @@ const Chat: React.FC<ChatProps> = ({ messages, onSendMessage, currentUser }) => 
             />
           </MessageItem>
         ))}
-        <div ref={messagesEndRef} />
       </MessagesList>
 
       <Divider sx={{ my: 1 }} />

@@ -18,6 +18,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import OnlineUsers from '../components/OnlineUsers';
 import Chat from '../components/Chat';
 import DeleteListButton from '../components/DeleteListButton';
+import ShareIcon from '@mui/icons-material/Share';
 
 
 const ListPage: React.FC = () => {
@@ -46,6 +47,34 @@ const ListPage: React.FC = () => {
       loadListBySlug(slug);
     }
   }, [slug, loadListBySlug]);
+
+  // Fallback copy function for unsupported browsers
+  const fallbackCopy = (text: string) => {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopySuccess(true);
+    } catch (err) {
+      alert('Copy failed. Please copy the link manually.');
+    }
+  };
+
+  const handleShareList = () => {
+    const url = window.location.href;
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      navigator.clipboard.writeText(url)
+        .then(() => setCopySuccess(true))
+        .catch(() => fallbackCopy(url));
+    } else {
+      fallbackCopy(url);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -126,8 +155,26 @@ const ListPage: React.FC = () => {
               >
                 {currentList.title}
               </Typography>
-              
-              <Box sx={{ float: 'right' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
+                <Button
+                  startIcon={<ShareIcon />}
+                  onClick={handleShareList}
+                  variant="outlined"
+                  color="primary"
+                  sx={{
+                    borderRadius: 8,
+                    px: 2,
+                    transition: 'all 0.2s ease',
+                    mr: 1,
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                      backgroundColor: 'primary.light',
+                      color: 'primary.contrastText'
+                    }
+                  }}
+                >
+                  Share List
+                </Button>
                 <DeleteListButton listId={currentList.id} listTitle={currentList.title} />
               </Box>
             </Box>

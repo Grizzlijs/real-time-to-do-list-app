@@ -57,9 +57,7 @@ export const saveUserInfo = (name: string, color: string): void => {
       // Emit user info update
       socket.emit('update-user-info', { name, color });
     }
-    console.log('User info saved to localStorage:', { name, color });
   } catch (e) {
-    console.error('Failed to save user info to localStorage:', e);
   }
 };
 
@@ -72,7 +70,6 @@ export const getUserInfoFromStorage = (): { name: string; color: string } => {
       color: storedColor || generateUserColor()
     };
   } catch (e) {
-    console.error('Failed to get user info from localStorage:', e);
     return {
       name: generateUserName(),
       color: generateUserColor()
@@ -83,7 +80,6 @@ export const getUserInfoFromStorage = (): { name: string; color: string } => {
 export const initSocket = (): Socket => {
   if (!socket && !isConnecting) {
     isConnecting = true;
-    console.log('Initializing socket connection to:', SOCKET_URL);
     const userInfo = getUserInfoFromStorage();
     const auth: SocketAuth = {
       name: userInfo.name,
@@ -101,7 +97,6 @@ export const initSocket = (): Socket => {
     });
     
     socket.on('connect', () => {
-      console.log('Socket connected successfully with ID:', socket?.id);
       isConnecting = false;
       
       // Update user info on connection
@@ -119,12 +114,10 @@ export const initSocket = (): Socket => {
     });
     
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error.message);
       isConnecting = false;
     });
     
     socket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
       isConnecting = false;
       if (reason === 'io server disconnect') {
         // Only attempt reconnect if it wasn't a client-side disconnect
@@ -133,11 +126,9 @@ export const initSocket = (): Socket => {
     });
     
     socket.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`Socket reconnection attempt #${attemptNumber}`);
     });
     
     socket.on('reconnect_failed', () => {
-      console.error('Socket failed to reconnect after multiple attempts');
       isConnecting = false;
     });
   }
@@ -148,7 +139,6 @@ export const initSocket = (): Socket => {
 
 export const disconnectSocket = (): void => {
   if (socket) {
-    console.log('Disconnecting socket');
     isConnecting = false;
     socket.disconnect();
     socket = null;
@@ -158,55 +148,37 @@ export const disconnectSocket = (): void => {
 
 export const joinList = (listId: number | string): void => {
   if (socket?.connected) {
-    console.log(`Joining list room: ${listId}`);
     socket.emit('join-list', String(listId));
-  } else {
-    console.warn('Cannot join list room: Socket not connected');
   }
 };
 
 export const leaveList = (listId: number | string): void => {
   if (socket?.connected) {
-    console.log(`Leaving list room: ${listId}`);
     socket.emit('leave-list', String(listId));
-  } else {
-    console.warn('Cannot leave list room: Socket not connected');
   }
 };
 
 export const emitTaskCreate = (listId: number, task: Task): void => {
   if (socket?.connected) {
-    console.log(`Emitting task-create for list ${listId}:`, { taskId: task.id });
     socket.emit('task-create', { listId, task });
-  } else {
-    console.warn('Cannot emit task-create: Socket not connected');
   }
 };
 
 export const emitTaskUpdate = (listId: number, task: Task): void => {
   if (socket?.connected) {
-    console.log(`Emitting task-update for list ${listId}:`, { taskId: task.id });
     socket.emit('task-update', { listId, task });
-  } else {
-    console.warn('Cannot emit task-update: Socket not connected');
   }
 };
 
 export const emitTaskDelete = (listId: number, taskId: number): void => {
   if (socket?.connected) {
-    console.log(`Emitting task-delete for list ${listId}:`, { taskId });
     socket.emit('task-delete', { listId, taskId });
-  } else {
-    console.warn('Cannot emit task-delete: Socket not connected');
   }
 };
 
 export const emitTasksReorder = (listId: number, tasks: Task[]): void => {
   if (socket?.connected) {
-    console.log(`Emitting tasks-reorder for list ${listId}:`, { taskCount: tasks.length });
     socket.emit('tasks-reorder', { listId, tasks });
-  } else {
-    console.warn('Cannot emit tasks-reorder: Socket not connected');
   }
 };
 
@@ -236,10 +208,7 @@ export const onTasksReordered = (callback: (data: { listId: number; tasks: Task[
 
 export const emitListDelete = (listId: number): void => {
   if (socket?.connected) {
-    console.log(`Emitting list-delete for list ${listId}`);
     socket.emit('list-delete', { listId });
-  } else {
-    console.warn('Cannot emit list-delete: Socket not connected');
   }
 };
 
@@ -251,7 +220,6 @@ export const onListDeleted = (callback: (data: { listId: number }) => void): voi
 
 export const offAllListeners = (): void => {
   if (socket?.connected) {
-    console.log('Removing all socket listeners');
     socket.off('task-created');
     socket.off('task-updated');
     socket.off('task-deleted');
@@ -262,13 +230,11 @@ export const offAllListeners = (): void => {
 
 // Add new functions for online users
 export const getSocket = (): Socket | null => {
-  console.log('Getting socket instance:', socket?.id);
   return socket;
 };
 
 export const getOnlineUsers = (callback: (users: OnlineUser[]) => void) => {
   if (!socket) {
-    console.warn('Socket not connected');
     return;
   }
 
@@ -277,7 +243,6 @@ export const getOnlineUsers = (callback: (users: OnlineUser[]) => void) => {
 
   // Set up the listener
   socket.on('online-users', (users: OnlineUser[]) => {
-    console.log('Received online users update:', users);
     callback(users);
   });
 
@@ -287,7 +252,6 @@ export const getOnlineUsers = (callback: (users: OnlineUser[]) => void) => {
 
 export const getUserInfo = (): OnlineUser | null => {
   if (!socket) {
-    console.warn('Cannot get user info: Socket not initialized');
     return null;
   }
   const auth = socket.auth as SocketAuth;
@@ -296,7 +260,6 @@ export const getUserInfo = (): OnlineUser | null => {
     name: auth.name,
     color: auth.color
   };
-  console.log('Current user info in socket service:', userInfo);
   return userInfo;
 };
 
@@ -323,9 +286,7 @@ export const saveChatHistory = (listId: number | string, messages: ChatMessage[]
     // Only keep up to MAX_CHAT_MESSAGES most recent messages
     const messagesToSave = messages.slice(-MAX_CHAT_MESSAGES);
     localStorage.setItem(getChatHistoryKey(listId), JSON.stringify(messagesToSave));
-    console.log(`Saved ${messagesToSave.length} chat messages for list ${listId}`);
   } catch (e) {
-    console.error('Failed to save chat history to localStorage:', e);
   }
 };
 
@@ -334,12 +295,10 @@ export const loadChatHistory = (listId: number | string): ChatMessage[] => {
     const history = localStorage.getItem(getChatHistoryKey(listId));
     if (history) {
       const messages = JSON.parse(history) as ChatMessage[];
-      console.log(`Loaded ${messages.length} chat messages for list ${listId}`);
       return messages;
     }
     return [];
   } catch (e) {
-    console.error('Failed to load chat history from localStorage:', e);
     return [];
   }
 };
@@ -347,10 +306,7 @@ export const loadChatHistory = (listId: number | string): ChatMessage[] => {
 // Add chat message functions
 export const emitChatMessage = (listId: number, message: string): void => {
   if (socket?.connected) {
-    console.log(`Emitting chat message for list ${listId}:`, message);
     socket.emit('chat-message', { listId, message });
-  } else {
-    console.warn('Cannot emit chat message: Socket not connected');
   }
 };
 

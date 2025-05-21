@@ -27,9 +27,10 @@ interface TaskItemProps {
   index: number;
   isSubtask?: boolean;
   parentId: number | null;
+  onClick?: () => void;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, parentId }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, parentId, onClick }) => {
   const {
     updateTask,
     deleteTask,
@@ -73,8 +74,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   
   useEffect(() => {
     if (task.subtasks && task.subtasks.length > 0) {
-      console.log(`Task ${task.id} (${task.title}) has ${task.subtasks.length} subtasks:`, 
-        task.subtasks.map(st => ({ id: st.id, title: st.title, order: st.task_order })));
+      // console.log(`Task ${task.id} (${task.title}) has ${task.subtasks.length} subtasks:`, 
+      //   task.subtasks.map(st => ({ id: st.id, title: st.title, order: st.task_order })));
     }
   }, [task.id, task.subtasks, task.title]);
 
@@ -83,7 +84,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     // Wait a bit before showing the tooltip to avoid being intrusive
     const tooltipTimeout = setTimeout(() => {
       if (!isSubtask && !task.subtasks?.length) {
-        console.log('Task might benefit from a subtask hint:', task.title);
+        // console.log('Task might benefit from a subtask hint:', task.title);
       }
     }, 5000);
     
@@ -107,14 +108,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     if (!draggedTaskId) return;
     
     const taskId = parseInt(draggedTaskId);
-    console.log(`Task ${taskId} dropped onto task ${task.id}`);
+    // console.log(`Task ${taskId} dropped onto task ${task.id}`);
     
     updateTaskParent(taskId, task.id)
       .then(() => {
         setShowSubtasks(true);
       })
       .catch(error => {
-        console.error('Error converting task to subtask:', error);
+        // console.error('Error converting task to subtask:', error);
       });
   };
 
@@ -253,17 +254,18 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   );
 
   const addSubtaskForm = isAddingSubtask && (
-    <Box sx={{ pl: 4, mt: 1 }}>
+    <Box sx={{ pl: { xs: 2, sm: 4 }, mt: 1 }}>
       <form onSubmit={handleSubtaskFormSubmit}>
-        <Stack direction="row" spacing={1}>
+        <Stack direction={{ xs: 'row', sm: 'row' }} spacing={1}>
           <TextField
-            size="small"
+            size={window.innerWidth < 600 ? 'medium' : 'small'}
             value={newSubtaskTitle}
             onChange={(e) => setNewSubtaskTitle(e.target.value)}
             placeholder="Enter subtask title"
             fullWidth
             disabled={isSubmittingSubtask}
             autoFocus
+            sx={{ fontSize: { xs: '1rem', sm: 'inherit' } }}
           />
           <IconButton 
             onClick={handleAddSubtask} 
@@ -429,6 +431,32 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
     return null;
   };
 
+  // Mobile: render compact card only
+  if (typeof window !== 'undefined' && window.innerWidth < 900) {
+    return (
+      <Box
+        sx={{
+          display: { xs: 'flex', md: 'none' },
+          alignItems: 'center',
+          p: 1,
+          borderBottom: '1px solid #eee',
+          background: '#fff',
+          borderRadius: 2,
+          mb: 1,
+          boxShadow: 1,
+          cursor: 'pointer',
+        }}
+        onClick={onClick}
+      >
+        <Checkbox checked={task.is_completed} sx={{ mr: 1 }} />
+        <Typography sx={{ flex: 1, fontSize: '1.1rem', fontWeight: 500 }}>{task.title}</Typography>
+        <Box sx={{ color: 'text.secondary', ml: 1 }}>
+          <span style={{ fontSize: 20 }}>&#8250;</span>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Draggable 
       draggableId={`task-${task.id}`} 
@@ -466,10 +494,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
             <Paper
               elevation={snapshot.isDragging ? 6 : 1}
               sx={{
-                p: 1,
-                backgroundColor: getBackgroundColor(),
-                borderLeft: task.task_type !== 'basic' ? 
-                  `4px solid ${task.task_type === 'work-task' ? '#3498db' : '#27ae60'}` : undefined,
+                p: { xs: 0.5, sm: 1, md: 1.5 },
+                backgroundColor: isSubtask ? { xs: '#f7fafd', sm: getBackgroundColor() } : getBackgroundColor(),
+                borderLeft: isSubtask ? { xs: '3px solid #90caf9', sm: 'none' } : (task.task_type !== 'basic' ? `4px solid ${task.task_type === 'work-task' ? '#3498db' : '#27ae60'}` : undefined),
                 opacity: task.is_completed ? 0.8 : 1,
                 position: 'relative',
                 cursor: snapshot.isDragging ? 'grabbing' : 'default',
@@ -479,10 +506,18 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                   ? '0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23)' 
                   : isDraggedOver 
                     ? '0 0 0 2px #1976d2' 
-                    : 1
+                    : 1,
+                mb: { xs: 1, sm: 2 },
+                mt: { xs: 0.5, sm: 1 },
+                borderRadius: { xs: 2, sm: 2 },
               }}
             >
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
+              <Stack 
+                direction={{ xs: 'row', sm: 'row' }} 
+                spacing={{ xs: 1, sm: 1 }} 
+                alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                sx={{ width: '100%' }}
+              >
                 {(!task.subtasks || task.subtasks.length === 0) && (
                   <Box
                     {...provided.dragHandleProps}
@@ -593,7 +628,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                   </Box>
                 )}
                 
-                <Stack direction="row" spacing={0.5}>
+                <Stack 
+                  direction={{ xs: 'row', sm: 'row' }} 
+                  spacing={{ xs: 1, sm: 0.5 }}
+                  sx={{ mt: { xs: 0.5, sm: 0 } }}
+                >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
                     {task.subtasks && task.subtasks.length > 0 && (
                       <Tooltip title={showSubtasks ? "Hide subtasks" : "Show subtasks"}>
@@ -608,17 +647,19 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
                     {!isAddingSubtask && (
                       <Tooltip title="Add subtask">
                         <IconButton 
-                          size="small" 
+                          size={window.innerWidth < 600 ? 'medium' : 'small'}
                           onClick={() => setIsAddingSubtask(true)}
                           sx={{ 
-                            ml: 'auto',
+                            ml: { xs: 0, sm: 'auto' },
                             '&:hover': {
                               color: theme.palette.success.main,
                               backgroundColor: 'rgba(0, 200, 83, 0.08)'
-                            }
+                            },
+                            minWidth: { xs: 44, sm: 32 },
+                            minHeight: { xs: 44, sm: 32 }
                           }}
                         >
-                          <AddIcon fontSize="small" />
+                          <AddIcon fontSize={window.innerWidth < 600 ? 'medium' : 'small'} />
                         </IconButton>
                       </Tooltip>
                     )}
