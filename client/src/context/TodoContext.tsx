@@ -19,6 +19,7 @@ interface TodoContextProps {
   isLoading: boolean;
   error: string | null;
   onlineUsers: OnlineUser[];
+  allOnlineUsers: OnlineUser[];
   currentUser: OnlineUser | null;
   messages: ChatMessage[];
   isUsernameDialogOpen: boolean;
@@ -66,10 +67,60 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const [allOnlineUsers, setAllOnlineUsers] = useState<OnlineUser[]>([]);
+  const [listOnlineUsers, setListOnlineUsers] = useState<OnlineUser[]>([]);
   const [currentUser, setCurrentUser] = useState<OnlineUser | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState<boolean>(false);
+
+  // Load lists when the provider mounts
+  useEffect(() => {
+    loadLists();
+  }, []);
+
+  // Initialize socket connection
+  useEffect(() => {
+    const initSocket = () => {
+      if (!socketService.getSocket()) {
+        console.log('Initializing socket connection in TodoContext');
+        socketService.initSocket();
+      }
+    };
+
+    initSocket();
+
+    // Set up global online users listener
+    socketService.getOnlineUsers((users) => {
+      console.log('Received global online users update:', users);
+      setAllOnlineUsers(users);
+    });
+
+    return () => {
+      if (socketService.getSocket()) {
+        socketService.getSocket()!.off('online-users');
+      }
+    };
+  }, []);
+
+  // Set up list-specific online users listener when currentList changes
+  useEffect(() => {
+    if (currentList) {
+      console.log('Setting up list-specific online users listener for list:', currentList.id);
+      socketService.getOnlineUsers((users) => {
+        console.log('Received list-specific online users update:', users);
+        const listUsers = users.filter(user => user.listId === String(currentList.id));
+        setListOnlineUsers(listUsers);
+      });
+    } else {
+      setListOnlineUsers([]);
+    }
+
+    return () => {
+      if (socketService.getSocket()) {
+        socketService.getSocket()!.off('online-users');
+      }
+    };
+  }, [currentList]);
 
   // Socket event handlers
   const handleTaskCreated = useCallback((data: { listId: number; task: Task }) => {
@@ -165,33 +216,21 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     }
   }, [currentList]);
 
-  // Initialize socket connection when component mounts
+  // Wait for socket to connect before setting up listeners
   useEffect(() => {
-    console.log('Initializing socket connection in TodoContext');
-    const socket = socketService.initSocket();
-    
-    // Wait for socket to connect before setting up listeners
-    socket.on('connect', () => {
+    socketService.getSocket()?.on('connect', () => {
       console.log('Socket connected, setting up listeners');
       // Set current user info
       const userInfo = socketService.getUserInfo();
       console.log('Setting current user:', userInfo);
       setCurrentUser(userInfo);
       
-      // Set up online users listener
-      socketService.getOnlineUsers((users: OnlineUser[]) => {
-        console.log('Received online users update in TodoContext:', users);
-        setOnlineUsers(users);
-      });
+      // Request initial online users list
+      socketService.getSocket()?.emit('get-online-users');
     });
-    
-    return () => {
-      console.log('Cleaning up socket connection in TodoContext');
-      socketService.disconnectSocket();
-    };
-  }, []); // Empty dependency array to run only once on mount
+  }, []);
 
-  // Set up socket event listeners for tasks
+  // Set up socket event listeners for tasks and list-specific users
   useEffect(() => {
     if (!currentList) return;
 
@@ -226,7 +265,9 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         
         socket.on('online-users', (users: OnlineUser[]) => {
           console.log(`Received online users update for list ${currentList.id}:`, users);
-          setOnlineUsers(users);
+          // Filter users who are in this specific list
+          const listUsers = users.filter(user => user.listId === String(currentList.id));
+          setListOnlineUsers(listUsers);
         });
 
         // Set up chat message listener
@@ -302,6 +343,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
         socketService.offTaskDeleted(handleTaskDeleted);
         socketService.offAllListeners();
         setMessages([]); // Clear messages when leaving a list
+        setListOnlineUsers([]); // Clear list-specific online users
       }
     };
   }, [currentList?.id, handleTaskCreated, handleTaskUpdated, handleTaskDeleted]);
@@ -945,19 +987,25 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     if (!currentUser) return;
 
     try {
-      // Store in localStorage
-      localStorage.setItem('username', username);
-      localStorage.setItem('userColor', color);
+      // Store in localStorage using the correct keys
+      localStorage.setItem('todo_app_username', username);
+      localStorage.setItem('todo_app_color', color);
 
       // Update local state
       setCurrentUser(prev => prev ? { ...prev, name: username, color } : null);
+
+      // Update socket auth
+      if (socketService.getSocket()) {
+        socketService.getSocket()!.auth = {
+          name: username,
+          color: color
+        };
+      }
     } catch (err) {
       console.error('Failed to update user info:', err);
       setError('Failed to update user info');
     }
   }, [currentUser]);
-
-  // ...existing useEffect hooks...
 
   const value: TodoContextProps = {
     lists,
@@ -967,7 +1015,8 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     filter,
     isLoading,
     error,
-    onlineUsers,
+    onlineUsers: listOnlineUsers,
+    allOnlineUsers,
     currentUser,
     messages,
     isUsernameDialogOpen,

@@ -17,9 +17,9 @@ const UserAvatar = memo(({ user }: { user: OnlineUser }) => (
     <Avatar
       sx={{
         bgcolor: user.color,
-        width: 32,
-        height: 32,
-        fontSize: '0.875rem',
+        width: 24, // Reduced size for better UX
+        height: 24, // Reduced size for better UX
+        fontSize: '0.75rem', // Adjusted font size for smaller icon
         border: '2px solid white',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         transition: 'transform 0.2s ease',
@@ -48,14 +48,22 @@ const StyledBox = styled(Box)(({ theme }) => ({
 const OnlineUsers: React.FC<OnlineUsersProps> = ({ users }) => {
   console.log('Rendering OnlineUsers component with users:', users);
 
+  // Sort users by name for a better UX
+  const sortedUsers = users.sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <StyledBox>
-      <Typography variant="subtitle2" color="textSecondary">
+      <Typography variant="h6" color="textPrimary">
         Online:
-      </Typography>
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        {users.map((user) => (
-          <UserAvatar key={user.id} user={user} />
+      </Typography> {/* Improved header for better UX */}
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        {sortedUsers.map((user) => (
+          <Box key={user.id} sx={{ display: 'flex', alignItems: 'center' }}>
+            <UserAvatar user={user} />
+            <Typography variant="body2" sx={{ ml: 1 }}>
+              {user.name}
+            </Typography>
+          </Box>
         ))}
       </Box>
     </StyledBox>

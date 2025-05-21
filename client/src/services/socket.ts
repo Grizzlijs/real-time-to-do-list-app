@@ -12,6 +12,7 @@ interface OnlineUser {
   id: string;
   name: string;
   color: string;
+  listId?: string;
 }
 
 // Define local storage keys
@@ -52,6 +53,9 @@ export const saveUserInfo = (name: string, color: string): void => {
     if (socket) {
       (socket.auth as SocketAuth).name = name;
       (socket.auth as SocketAuth).color = color;
+      
+      // Emit user info update
+      socket.emit('update-user-info', { name, color });
     }
     console.log('User info saved to localStorage:', { name, color });
   } catch (e) {
@@ -99,6 +103,15 @@ export const initSocket = (): Socket => {
     socket.on('connect', () => {
       console.log('Socket connected successfully with ID:', socket?.id);
       isConnecting = false;
+      
+      // Update user info on connection
+      if (socket) {
+        socket.emit('update-user-info', {
+          name: auth.name,
+          color: auth.color
+        });
+      }
+      
       // Request initial online users list only if we have a callback
       if (onlineUsersCallback) {
         socket?.emit('get-online-users');
@@ -146,7 +159,7 @@ export const disconnectSocket = (): void => {
 export const joinList = (listId: number | string): void => {
   if (socket?.connected) {
     console.log(`Joining list room: ${listId}`);
-    socket.emit('join-list', listId);
+    socket.emit('join-list', String(listId));
   } else {
     console.warn('Cannot join list room: Socket not connected');
   }
@@ -155,7 +168,7 @@ export const joinList = (listId: number | string): void => {
 export const leaveList = (listId: number | string): void => {
   if (socket?.connected) {
     console.log(`Leaving list room: ${listId}`);
-    socket.emit('leave-list', listId);
+    socket.emit('leave-list', String(listId));
   } else {
     console.warn('Cannot leave list room: Socket not connected');
   }
@@ -253,29 +266,23 @@ export const getSocket = (): Socket | null => {
   return socket;
 };
 
-export const getOnlineUsers = (callback: (users: OnlineUser[]) => void): void => {
-  if (socket?.connected) {
-    console.log('Setting up online-users listener in socket service');
-    onlineUsersCallback = callback;
-    
-    // Remove any existing listeners first to prevent duplicates
-    socket.off('online-users');
-    
-    // Add the new listener with throttling
-    socket.on('online-users', (users: OnlineUser[]) => {
-      const now = Date.now();
-      if (now - lastOnlineUsersUpdate >= ONLINE_USERS_UPDATE_THROTTLE) {
-        console.log('Received online-users event in socket service:', users);
-        callback(users);
-        lastOnlineUsersUpdate = now;
-      }
-    });
-    
-    // Request initial list
-    socket.emit('get-online-users');
-  } else {
-    console.warn('Cannot set up online-users listener: Socket not connected');
+export const getOnlineUsers = (callback: (users: OnlineUser[]) => void) => {
+  if (!socket) {
+    console.warn('Socket not connected');
+    return;
   }
+
+  // Remove any existing listeners to prevent duplicates
+  socket.off('online-users');
+
+  // Set up the listener
+  socket.on('online-users', (users: OnlineUser[]) => {
+    console.log('Received online users update:', users);
+    callback(users);
+  });
+
+  // Request initial list of online users
+  socket.emit('get-online-users');
 };
 
 export const getUserInfo = (): OnlineUser | null => {

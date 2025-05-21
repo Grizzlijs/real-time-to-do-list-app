@@ -24,7 +24,7 @@ import StorageIcon from '@mui/icons-material/Storage';
 import SpeedIcon from '@mui/icons-material/Speed';
 
 const HomePage: React.FC = () => {
-  const { lists, loadLists, isLoading } = useTodo();
+  const { lists, isLoading } = useTodo();
   const theme = useTheme();
   const [heroAnimationComplete, setHeroAnimationComplete] = useState(false);
   const [isEasterEggOpen, setIsEasterEggOpen] = useState(false);
@@ -57,15 +57,13 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadLists();
-    
     // Trigger hero animation after component mounts
     const timer = setTimeout(() => {
       setHeroAnimationComplete(true);
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [loadLists]);
+  }, []);
 
   return (
     <>

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Button, Avatar, Menu, MenuItem, ListItemIcon, Typography, Box } from '@mui/material';
+import { Button, Avatar, Menu, MenuItem, ListItemIcon, Typography, Box, Divider } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import PeopleIcon from '@mui/icons-material/People';
 import { useTodo } from '../context/TodoContext';
 import UsernameDialog from './UsernameDialog';
 import { getUserInfoFromStorage } from '../services/socket';
 
 const UserProfileButton: React.FC = () => {
-  const { currentUser, setUserInfo, isUsernameDialogOpen, setUsernameDialogOpen: setUsernameDialog } = useTodo();
+  const { currentUser, setUserInfo, isUsernameDialogOpen, setUsernameDialogOpen: setUsernameDialog, allOnlineUsers } = useTodo();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -17,10 +18,12 @@ const UserProfileButton: React.FC = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
   const handleOpenUsernameDialog = () => {
     setUsernameDialog(true);
     handleClose();
   };
+
   const handleUsernameDialogClose = (username: string | null) => {
     setUsernameDialog(false);
     
@@ -71,7 +74,7 @@ const UserProfileButton: React.FC = () => {
         onClose={handleClose}
         PaperProps={{
           sx: { 
-            minWidth: 200,
+            minWidth: 280,
             mt: 1,
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
             borderRadius: '10px',
@@ -100,6 +103,49 @@ const UserProfileButton: React.FC = () => {
           </ListItemIcon>
           Edit username
         </MenuItem>
+
+        <Divider sx={{ my: 1 }} />
+
+        <Box sx={{ px: 2, py: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <PeopleIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+            <Typography variant="subtitle2" color="text.secondary">
+              All Online Users ({allOnlineUsers.length})
+            </Typography>
+          </Box>
+          <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
+            {allOnlineUsers.map((user) => (
+              <Box
+                key={user.id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  py: 0.75,
+                  px: 1,
+                  borderRadius: 1,
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  }
+                }}
+              >
+                <Avatar
+                  sx={{
+                    bgcolor: user.color,
+                    width: 24,
+                    height: 24,
+                    fontSize: '0.75rem',
+                    mr: 1
+                  }}
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </Avatar>
+                <Typography variant="body2">
+                  {user.name}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
       </Menu>
       
       <UsernameDialog

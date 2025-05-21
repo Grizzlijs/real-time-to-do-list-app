@@ -22,21 +22,46 @@ export const setupSocketHandlers = (io: Server) => {
     console.log(`User connected: ${user.name} (${socket.id})`);
     
     // Broadcast updated user list to all clients
-    const broadcastUserList = (listId: string) => {
-      // Filter users who are in this specific list
-      const userList = Array.from(onlineUsers.values())
-        .filter(u => u.listId === listId);
-      console.log(`Broadcasting online users for list ${listId}:`, userList);
-      io.to(`list-${listId}`).emit('online-users', userList);
+    const broadcastUserList = (listId?: string) => {
+      if (listId) {
+        // Filter users who are in this specific list
+        const userList = Array.from(onlineUsers.values())
+          .filter(u => u.listId === listId);
+        console.log(`Broadcasting online users for list ${listId}:`, userList);
+        io.to(`list-${listId}`).emit('online-users', userList);
+      } else {
+        // Broadcast to all clients
+        const allUsers = Array.from(onlineUsers.values());
+        console.log('Broadcasting all online users:', allUsers);
+        io.emit('online-users', allUsers);
+      }
     };
     
     // Send initial user list to the new user
     socket.emit('online-users', Array.from(onlineUsers.values()));
     
+    // Broadcast updated user list to all clients immediately after connection
+    broadcastUserList();
+    
     // Handle request for online users
     socket.on('get-online-users', () => {
       console.log(`User ${user.name} requested online users list`);
-      socket.emit('online-users', Array.from(onlineUsers.values()));
+      const allUsers = Array.from(onlineUsers.values());
+      socket.emit('online-users', allUsers);
+      // Also broadcast to all clients to ensure consistency
+      broadcastUserList();
+    });
+
+    // Handle user info update
+    socket.on('update-user-info', (data: { name: string; color: string }) => {
+      const user = onlineUsers.get(socket.id);
+      if (user) {
+        user.name = data.name;
+        user.color = data.color;
+        onlineUsers.set(socket.id, user);
+        console.log(`Updated user info for ${user.name} (${socket.id})`);
+        broadcastUserList();
+      }
     });
     
     // Join a specific to-do list room
@@ -60,6 +85,8 @@ export const setupSocketHandlers = (io: Server) => {
       
       // Broadcast updated user list for this specific list
       broadcastUserList(listId);
+      // Also broadcast global update
+      broadcastUserList();
     });
 
     // Leave a specific to-do list room
@@ -79,6 +106,8 @@ export const setupSocketHandlers = (io: Server) => {
       
       // Broadcast updated user list for this specific list
       broadcastUserList(listId);
+      // Also broadcast global update
+      broadcastUserList();
     });
 
     // Handle task updates (edit, completion, order)
@@ -179,6 +208,9 @@ export const setupSocketHandlers = (io: Server) => {
       }
       onlineUsers.delete(socket.id);
       console.log('Remaining online users:', Array.from(onlineUsers.values()));
+      
+      // Broadcast updated user list to all clients
+      broadcastUserList();
     });
   });
 };
