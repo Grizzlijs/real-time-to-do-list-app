@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useMemo } from 'react';
+import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
 import { Box, TextField, Button, Typography, Paper, Stack, ToggleButtonGroup, ToggleButton, Fab, Checkbox, DialogContent } from '@mui/material';
 import { DragDropContext, Droppable, DropResult, DroppableProps, Draggable } from '@hello-pangea/dnd';
 import TaskItem from './TaskItem';
@@ -64,20 +64,13 @@ const TaskList: React.FC = () => {
   
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isAddingTask, setIsAddingTask] = useState(false);
-  const [forceRender, setForceRender] = useState(0); // Force render counter
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
-  // Force component re-render when tasks are updated
-  useEffect(() => {
-    setForceRender(prev => prev + 1);
-  }, [tasks]);
-  
   // Get hierarchical task structure for display
   const hierarchicalTasks = useMemo(() => {
-    console.log('Recalculating hierarchical tasks after state change');
     return getTaskHierarchy();
-  }, [getTaskHierarchy, forceRender]);
+  }, [getTaskHierarchy, tasks]);
   
   // Find the last leaf node's ID in the tree (deepest, rightmost leaf)
   const findLastLeafId = (tasks: Task[]): number | null => {
@@ -98,7 +91,7 @@ const TaskList: React.FC = () => {
   const lastLeafId = useMemo(() => findLastLeafId(hierarchicalTasks), [hierarchicalTasks]);
   
   // Handle form submission for creating a new task
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskTitle.trim() === '') return;
     
@@ -109,7 +102,7 @@ const TaskList: React.FC = () => {
     } finally {
       setIsAddingTask(false);
     }
-  };
+  }, [createTask, newTaskTitle]);
 
   // Helper to parse parentId from droppableId
   const parseParentId = (droppableId: string) => {
@@ -119,7 +112,7 @@ const TaskList: React.FC = () => {
   };
 
   // Handle drag and drop reordering and subtask conversion
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = useCallback((result: DropResult) => {
     const { destination, source, draggableId } = result;
 
     if (!destination) {
@@ -207,7 +200,7 @@ const TaskList: React.FC = () => {
         console.error('Error reordering tasks:', error);
       });
     }
-  };
+  }, [tasks, updateTaskParent, reorderTasks]);
 
   // Filter tasks based on current filter
   let displayedTasks: Task[] = [];
@@ -225,14 +218,15 @@ const TaskList: React.FC = () => {
   displayedTasks.sort((a, b) => a.task_order - b.task_order);
   
   // Mobile: open modal on task click
-  const handleTaskClick = (task: Task) => {
+  const handleTaskClick = useCallback((task: Task) => {
     setSelectedTask(task);
     setIsTaskModalOpen(true);
-  };
-  const handleCloseModal = () => {
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
     setIsTaskModalOpen(false);
     setSelectedTask(null);
-  };
+  }, []);
 
   return (
     <Paper 

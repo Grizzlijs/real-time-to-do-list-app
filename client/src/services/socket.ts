@@ -25,6 +25,8 @@ let onlineUsersCallback: ((users: OnlineUser[]) => void) | null = null;
 let lastOnlineUsersUpdate = 0;
 const ONLINE_USERS_UPDATE_THROTTLE = 1000; // 1 second
 
+let userUpdatedCallback: ((user: OnlineUser) => void) | null = null;
+
 // Generate a random color for the user
 const generateUserColor = () => {
   const colors = [
@@ -58,6 +60,7 @@ export const saveUserInfo = (name: string, color: string): void => {
       socket.emit('update-user-info', { name, color });
     }
   } catch (e) {
+    console.error("Failed to save user info:", e);
   }
 };
 
@@ -108,8 +111,18 @@ export const initSocket = (): Socket => {
       }
       
       // Request initial online users list only if we have a callback
-      if (onlineUsersCallback) {
-        socket?.emit('get-online-users');
+      if (onlineUsersCallback) { // This seems to be for a different pattern, getOnlineUsers handles its own emit
+        // socket?.emit('get-online-users'); // getOnlineUsers itself emits this.
+      }
+
+      // Setup user-updated listener if a callback has been registered
+      if (userUpdatedCallback && socket) {
+        socket.off('user-updated'); // Ensure no duplicates from previous connection attempts
+        socket.on('user-updated', (user: OnlineUser) => {
+          if (userUpdatedCallback) {
+            userUpdatedCallback(user);
+          }
+        });
       }
     });
     
@@ -225,6 +238,7 @@ export const offAllListeners = (): void => {
     socket.off('task-deleted');
     socket.off('tasks-reordered');
     socket.off('list-deleted');
+    // Note: 'online-users' is managed by getOnlineUsers, 'user-updated' by onUserUpdated/offUserUpdated
   }
 };
 
@@ -261,6 +275,25 @@ export const getUserInfo = (): OnlineUser | null => {
     color: auth.color
   };
   return userInfo;
+};
+
+export const onUserUpdated = (callback: (user: OnlineUser) => void): void => {
+  userUpdatedCallback = callback;
+  if (socket?.connected) {
+    socket.off('user-updated'); // Ensure no duplicates
+    socket.on('user-updated', (user: OnlineUser) => {
+      if (userUpdatedCallback) { // Check callback again inside closure
+        userUpdatedCallback(user);
+      }
+    });
+  }
+};
+
+export const offUserUpdated = (): void => {
+  if (socket) {
+    socket.off('user-updated');
+  }
+  userUpdatedCallback = null;
 };
 
 // Add chat message types

@@ -102,6 +102,31 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     };
   }, []);
 
+  // Effect for handling global user updates (name/color changes) from socket
+  useEffect(() => {
+    const handleUserUpdate = (updatedUser: OnlineUser) => {
+      console.log('Received user-updated event in context:', updatedUser);
+      setAllOnlineUsers(prevUsers =>
+        prevUsers.map(u => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
+      );
+      // Also update listOnlineUsers if the user is in the current list's context
+      setListOnlineUsers(prevUsers =>
+        prevUsers.map(u => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
+      );
+      setCurrentUser(prevCurrentUser =>
+        prevCurrentUser && prevCurrentUser.id === updatedUser.id
+          ? { ...prevCurrentUser, ...updatedUser }
+          : prevCurrentUser
+      );
+    };
+
+    socketService.onUserUpdated(handleUserUpdate);
+
+    return () => {
+      socketService.offUserUpdated(); // Clean up the listener
+    };
+  }, []); // Runs once on mount to register the handler
+
   // Set up list-specific online users listener when currentList changes
   useEffect(() => {
     if (currentList) {
@@ -391,8 +416,61 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Update list name
+  const updateList = useCallback(async (id: number, name: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedList = await api.updateList(id, name);
+      
+      // Update lists array
+      setLists(prevLists => 
+        prevLists.map(list => 
+          list.id === id ? updatedList : list
+        )
+      );
+      
+      // Update currentList if it's the one being updated
+      if (currentList && currentList.id === id) {
+        setCurrentList(updatedList);
+      }
+      
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Failed to update list:', err);
+      setError('Failed to update list');
+      setIsLoading(false);
+    }
+  }, [currentList]); // Added currentList dependency
+
+  // Update user info
+  const setUserInfo = useCallback(async (username: string, color: string) => {
+    try {
+      // Call the socket service function to save locally, update socket auth, and emit update
+      socketService.saveUserInfo(username, color);
+
+      // Optimistically update currentUser state for immediate UI feedback.
+      // The 'user-updated' event from the server will be the ultimate source of truth.
+      setCurrentUser(prevUser => {
+        // Try to use existing socket ID or previous user ID if socket is not yet available.
+        const socketId = socketService.getSocket()?.id || prevUser?.id || '';
+        return {
+          id: socketId,
+          name: username,
+          color: color,
+          listId: prevUser?.listId // Preserve listId if it exists
+        };
+      });
+
+      setIsUsernameDialogOpen(false); // Close dialog after setting info
+    } catch (error) {
+      console.error('Error setting user info:', error);
+      setError('Failed to set user information.');
+    }
+  }, []); // No currentList dependency needed here as saveUserInfo handles emission.
+
   // Create a new list
-  const createNewList = async (title: string) => {
+  const createNewList = useCallback(async (title: string) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -406,10 +484,10 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       setIsLoading(false);
       throw err;
     }
-  };
+  }, []); // No external dependencies other than setters
 
   // Delete a list
-  const deleteList = async (id: number) => {
+  const deleteList = useCallback(async (id: number) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -425,12 +503,12 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       setError('Failed to delete list');
       setIsLoading(false);
     }
-  };  // Create a new task
-  const createTask = async (title: string, parentId?: number | null, cost?: number | null, taskType?: string, specialFields?: any) => {
+  }, [currentList]); // Added currentList dependency
+
+  // Create a new task
+  const createTask = useCallback(async (title: string, parentId?: number | null, cost?: number | null, taskType?: string, specialFields?: any) => {
     if (!currentList) return;
     
-    // Don't set global loading state which would trigger full page refresh
-    // setIsLoading(true);
     setError(null);
     try {      // Use a properly typed object
       const taskData: {
@@ -504,10 +582,10 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // Don't set global loading state
       // setIsLoading(false);
     }
-  };
+  }, [currentList]); // Added currentList dependency
 
   // Update task completion status
-  const updateTaskCompletion = async (taskId: number, isCompleted: boolean) => {
+  const updateTaskCompletion = useCallback(async (taskId: number, isCompleted: boolean) => {
     if (!currentList) return;
     
     setError(null);
@@ -532,10 +610,10 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       setTasks(prevTasks => [...prevTasks]); // Trigger re-render
       loadListBySlug(currentList.slug); // Reload from server
     }
-  };
+  }, [currentList, loadListBySlug]); // Added currentList and loadListBySlug dependencies
 
   // Update task title
-  const updateTaskTitle = async (taskId: number, title: string) => {
+  const updateTaskTitle = useCallback(async (taskId: number, title: string) => {
     if (!currentList || !title.trim()) return;
     
     setError(null);
@@ -559,10 +637,10 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // Revert optimistic update on failure
       loadListBySlug(currentList.slug);
     }
-  };
+  }, [currentList, loadListBySlug]); // Added currentList and loadListBySlug dependencies
 
   // Update task description
-  const updateTaskDescription = async (taskId: number, description: string) => {
+  const updateTaskDescription = useCallback(async (taskId: number, description: string) => {
     if (!currentList) return;
     
     setError(null);
@@ -586,10 +664,10 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // Revert optimistic update on failure
       loadListBySlug(currentList.slug);
     }
-  };
+  }, [currentList, loadListBySlug]); // Added currentList and loadListBySlug dependencies
 
   // Delete a task
-  const deleteTask = async (taskId: number) => {
+  const deleteTask = useCallback(async (taskId: number) => {
     if (!currentList) return;
     
     setError(null);
@@ -609,7 +687,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // Revert optimistic update on failure
       loadListBySlug(currentList.slug);
     }
-  };
+  }, [currentList, loadListBySlug]); // Added currentList and loadListBySlug dependencies
 
   // Create a hierarchical task structure with subtasks
   const getTaskHierarchy = useCallback(() => {
@@ -678,7 +756,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   }, [tasks]);
 
   // Update task parent
-  const updateTaskParent = async (taskId: number, newParentId: number | null): Promise<void> => {
+  const updateTaskParent = useCallback(async (taskId: number, newParentId: number | null): Promise<void> => {
     if (!currentList) return;
     
     setError(null);
@@ -792,24 +870,24 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       loadListBySlug(currentList.slug);
       throw err;
     }
-  };
+  }, [currentList, tasks, loadListBySlug]); // Added currentList, tasks, and loadListBySlug dependencies
 
   // Reorder tasks (for drag and drop)
-  const reorderTasks = async (reorderedTasks: Task[]): Promise<void> => {
+  const reorderTasks = useCallback(async (reorderedTasksData: Task[]): Promise<void> => { // Renamed parameter to avoid conflict
     if (!currentList) return;
     
     setError(null);
     try {
-      console.log('Reordering tasks:', reorderedTasks.map(t => ({ id: t.id, order: t.task_order, parent: t.parent_id })));
+      console.log('Reordering tasks:', reorderedTasksData.map(t => ({ id: t.id, order: t.task_order, parent: t.parent_id })));
       
       // Ensure all tasks have the same parent_id (they should belong to the same level)
-      const parentId = reorderedTasks[0]?.parent_id;
-      if (reorderedTasks.some(t => t.parent_id !== parentId)) {
+      const parentId = reorderedTasksData[0]?.parent_id;
+      if (reorderedTasksData.some(t => t.parent_id !== parentId)) {
         console.warn('Attempting to reorder tasks with different parent IDs - this is not supported');
       }
       
       // Prepare data for server update and local state
-      const taskOrderData = reorderedTasks.map((task, index) => ({
+      const taskOrderData = reorderedTasksData.map((task, index) => ({
         id: task.id,
         task_order: index + 1, // Ensure sequential ordering
         parent_id: task.parent_id
@@ -837,7 +915,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       
       // Emit socket event with the updated tasks immediately
       // Don't wait for the server response for immediate feedback
-      const tasksForSocketEvent = reorderedTasks.map(task => {
+      const tasksForSocketEvent = reorderedTasksData.map(task => {
         const existingTask = tasks.find(t => t.id === task.id);
         return {
           ...existingTask,
@@ -860,16 +938,16 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       loadListBySlug(currentList.slug);
       throw err; // Re-throw to allow caller to handle the error
     }
-  };
+  }, [currentList, tasks, loadListBySlug]); // Added currentList, tasks, and loadListBySlug dependencies
 
   // Handle sending chat messages
-  const sendChatMessage = (text: string) => {
+  const sendChatMessage = useCallback((text: string) => {
     if (!currentList) return;
     socketService.emitChatMessage(currentList.id, text);
-  };
+  }, [currentList]); // Added currentList dependency
 
   // Update task with any combination of fields
-  const updateTask = async (taskId: number, updates: TaskUpdateDTO) => {
+  const updateTask = useCallback(async (taskId: number, updates: TaskUpdateDTO) => {
     if (!currentList) return;
     
     setError(null);
@@ -911,14 +989,12 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // Revert optimistic update on failure
       loadListBySlug(currentList.slug);
     }
-  };
+  }, [currentList, loadListBySlug]); // Added currentList and loadListBySlug dependencies
 
   // Add a subtask to a parent task
-  const addSubtask = async (parentId: number, title: string) => {
+  const addSubtask = useCallback(async (parentId: number, title: string) => {
     if (!currentList) return;
     
-    // Don't set global loading state which would trigger full page refresh
-    // setIsLoading(true);
     setError(null);
     try {
       const taskData = {
@@ -953,60 +1029,8 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
       // setIsLoading(false);
       throw err;
     }
-  };
-
-  // Update list name
-  const updateList = async (id: number, name: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const updatedList = await api.updateList(id, name);
-      
-      // Update lists array
-      setLists(prevLists => 
-        prevLists.map(list => 
-          list.id === id ? updatedList : list
-        )
-      );
-      
-      // Update currentList if it's the one being updated
-      if (currentList && currentList.id === id) {
-        setCurrentList(updatedList);
-      }
-      
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Failed to update list:', err);
-      setError('Failed to update list');
-      setIsLoading(false);
-    }
-  };
-
-  // Update user info
-  const setUserInfo = useCallback(async (username: string, color: string) => {
-    if (!currentUser) return;
-
-    try {
-      // Store in localStorage using the correct keys
-      localStorage.setItem('todo_app_username', username);
-      localStorage.setItem('todo_app_color', color);
-
-      // Update local state
-      setCurrentUser(prev => prev ? { ...prev, name: username, color } : null);
-
-      // Update socket auth
-      if (socketService.getSocket()) {
-        socketService.getSocket()!.auth = {
-          name: username,
-          color: color
-        };
-      }
-    } catch (err) {
-      console.error('Failed to update user info:', err);
-      setError('Failed to update user info');
-    }
-  }, [currentUser]);
-
+  }, [currentList]); // Added currentList dependency
+  
   const value: TodoContextProps = {
     lists,
     currentList,

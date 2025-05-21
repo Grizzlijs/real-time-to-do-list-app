@@ -867,4 +867,35 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, isSubtask = false, par
   );
 };
 
-export default memo(TaskItem);
+// Custom comparison function for React.memo
+const areEqual = (prevProps: TaskItemProps, nextProps: TaskItemProps) => {
+  // Compare only the props that affect rendering
+  return (
+    prevProps.task.id === nextProps.task.id &&
+    prevProps.task.title === nextProps.task.title &&
+    prevProps.task.description === nextProps.task.description &&
+    prevProps.task.is_completed === nextProps.task.is_completed &&
+    prevProps.task.task_type === nextProps.task.task_type &&
+    prevProps.task.deadline === nextProps.task.deadline &&
+    prevProps.task.carbohydrate === nextProps.task.carbohydrate &&
+    prevProps.task.protein === nextProps.task.protein &&
+    prevProps.task.fat === nextProps.task.fat &&
+    prevProps.task.picture === nextProps.task.picture &&
+    prevProps.task.task_order === nextProps.task.task_order &&
+    prevProps.index === nextProps.index &&
+    prevProps.isSubtask === nextProps.isSubtask &&
+    prevProps.parentId === nextProps.parentId &&
+    // Deep compare subtasks if they exist, or ensure both are undefined/empty
+    (prevProps.task.subtasks === nextProps.task.subtasks || // handles both undefined or same array reference
+     (Array.isArray(prevProps.task.subtasks) && Array.isArray(nextProps.task.subtasks) &&
+      prevProps.task.subtasks.length === nextProps.task.subtasks.length &&
+      prevProps.task.subtasks.every((subtask, i) => {
+        const nextSubtask = nextProps.task.subtasks && nextProps.task.subtasks[i];
+        return nextSubtask && subtask.id === nextSubtask.id && subtask.title === nextSubtask.title && subtask.is_completed === nextSubtask.is_completed; // Add other relevant subtask props
+      })
+     )
+    )
+  );
+};
+
+export default memo(TaskItem, areEqual);
