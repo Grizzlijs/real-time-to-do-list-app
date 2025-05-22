@@ -31,7 +31,7 @@ A modern, collaborative to-do list application with real-time updates and nested
 
 ### Prerequisites
 
-- Node.js 14.x or later
+- Node.js 22.x or later
 - npm or yarn
 
 ### Installation

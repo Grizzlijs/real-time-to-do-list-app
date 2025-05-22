@@ -108,7 +108,7 @@
     *   Create a database (e.g., `todo_app_db`).
     *   **Configure Database Connection:**
         *   Navigate to the `server` directory: `cd server`
-        *   Create a `.env` file by copying `.env.example` (if it doesn't exist, create one with the following content):
+        *   Create a `.env` file with the following content:
             ```env
             # server/.env
             PG_USER=postgres
@@ -129,6 +129,7 @@
         ```env
         # client/.env
         REACT_APP_SOCKET_URL=http://localhost:5000 
+        REACT_APP_API_URL=http://localhost:5000
         ```
         Adjust the URL if your backend server is running elsewhere.
 
