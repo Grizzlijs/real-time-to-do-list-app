@@ -10,8 +10,15 @@ RUN npm install --legacy-peer-deps
 # Copy client source code
 COPY client/ ./
 
+# Set socket URL for client build - this will be overridden by environment variable
+ARG REACT_APP_SOCKET_URL=http://localhost:5000
+ENV REACT_APP_SOCKET_URL=${REACT_APP_SOCKET_URL}
+
 # Build client
 RUN npm run build
+
+# Generate a build-time env-config.js
+RUN echo "window.ENV = { REACT_APP_SOCKET_URL: '${REACT_APP_SOCKET_URL}' };" > /app/client/build/env-config.js
 
 FROM node:18-alpine AS server-build
 

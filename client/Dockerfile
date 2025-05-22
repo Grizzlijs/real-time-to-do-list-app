@@ -25,14 +25,6 @@ FROM nginx:alpine
 # Copy the built assets to nginx serving folder
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Create a script to update environment variables at runtime
-RUN echo "#!/bin/sh\n\
-if [ ! -z \"\$REACT_APP_SOCKET_URL\" ]; then\n\
-  echo \"window.ENV = { REACT_APP_SOCKET_URL: '\$REACT_APP_SOCKET_URL' };\" > /usr/share/nginx/html/env-config.js;\n\
-fi\n\
-exec nginx -g 'daemon off;'" > /docker-entrypoint.sh && \
-chmod +x /docker-entrypoint.sh
-
 # Add custom nginx configuration for SPA support
 RUN echo 'server { \
   listen 80; \
@@ -46,4 +38,7 @@ RUN echo 'server { \
 # Expose port 80
 EXPOSE 80
 
-CMD ["/docker-entrypoint.sh"]
+# Simple startup script
+COPY --from=build /app/build/env-config.js /usr/share/nginx/html/env-config.js
+
+CMD ["nginx", "-g", "daemon off;"]

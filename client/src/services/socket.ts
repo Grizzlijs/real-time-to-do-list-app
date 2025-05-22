@@ -1,7 +1,24 @@
 import { io, Socket } from 'socket.io-client';
 import { Task } from '../types';
 
-// Get Socket URL from window.ENV or fallback to .env or default
+// Get Socket URL from different possible sources
+// 1. From window.ENV (runtime config in env-config.js)
+// 2. From process.env (build-time config)
+// 3. Default fallback
+let SOCKET_URL = 'http://localhost:5000';
+
+// Check for window.ENV first (runtime config)
+if (typeof window !== 'undefined' && window.ENV && window.ENV.REACT_APP_SOCKET_URL) {
+  SOCKET_URL = window.ENV.REACT_APP_SOCKET_URL;
+} 
+// Otherwise check for build-time config
+else if (process.env.REACT_APP_SOCKET_URL) {
+  SOCKET_URL = process.env.REACT_APP_SOCKET_URL;
+}
+
+console.log('Socket connecting to:', SOCKET_URL);
+
+// Define interface for Window with ENV property
 declare global {
   interface Window {
     ENV?: {
@@ -9,8 +26,6 @@ declare global {
     };
   }
 }
-
-const SOCKET_URL = window.ENV?.REACT_APP_SOCKET_URL || process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
 interface SocketAuth {
   name: string;
