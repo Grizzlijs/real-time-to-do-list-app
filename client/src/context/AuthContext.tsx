@@ -5,6 +5,7 @@ interface AuthContextProps {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   error: string | null;
+  isLoading: boolean;
 }
 
 interface AuthProviderProps {
@@ -24,14 +25,21 @@ export const useAuth = (): AuthContextProps => {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
   // Check if user is already authenticated on load
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    console.log('Auth token from localStorage:', token);
-    if (token) {
-      setIsAuthenticated(true);
-    }
+    const checkAuth = () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        setIsAuthenticated(true);
+      }
+      setIsLoading(false);
+    };
+    
+    checkAuth();
   }, []);
+
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setError(null);
@@ -73,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, error }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, error, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

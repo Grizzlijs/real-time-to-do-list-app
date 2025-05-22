@@ -34,24 +34,17 @@ type SubtaskListProps = {
   handleSubtaskToggle: (id: number, isCompleted: boolean) => void;
 };
 
-const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
-  const { updateTask, /*reorderTasks,*/ tasks, getTaskHierarchy, addSubtask, deleteTask } = useTodo();
+const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {  const { updateTask, /*reorderTasks,*/ tasks, getTaskHierarchy, addSubtask, deleteTask } = useTodo();
   const [localTask, setLocalTask] = useState<Task | null>(null);
   const [openMap, setOpenMap] = useState<{ [id: number]: boolean }>({});
   const [editingDescriptions, setEditingDescriptions] = useState<{ [id: number]: boolean }>({});
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [tempDescriptions, setTempDescriptions] = useState<{ [id: number]: string }>({});
-  const mainDescriptionRef = useRef<HTMLInputElement>(null);
   const subtaskDescriptionRefs = useRef<{ [id: number]: HTMLInputElement | null }>({});
-  const [editingMainDescription, setEditingMainDescription] = useState(false);
-  const [mainDescriptionDraft, setMainDescriptionDraft] = useState('');
   const [subtaskDescriptionDrafts, setSubtaskDescriptionDrafts] = useState<{ [id: number]: string }>({});
   const [isAddingRootSubtask, setIsAddingRootSubtask] = useState(false);
-  const [newRootSubtaskTitle, setNewRootSubtaskTitle] = useState('');
-  const [isSubmittingRootSubtask, setIsSubmittingRootSubtask] = useState(false);
+  const [newRootSubtaskTitle, setNewRootSubtaskTitle] = useState('');  const [isSubmittingRootSubtask, setIsSubmittingRootSubtask] = useState(false);
 
   // Memoize taskHierarchy to avoid recalculating on every render
-  const taskHierarchy = useMemo(() => getTaskHierarchy(), [tasks, getTaskHierarchy]);
+  const taskHierarchy = useMemo(() => getTaskHierarchy(), [getTaskHierarchy]);
 
   const findTaskInHierarchy = useCallback((tasksToSearch: Task[], targetId: number): Task | null => { // Renamed 'tasks' to 'tasksToSearch'
     for (const t of tasksToSearch) { // Use renamed 'tasksToSearch'
@@ -88,7 +81,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
       setLocalTask(null);
     }
   }, [open, task, taskHierarchy, findTaskInHierarchy, tasks]);
-
   // Initialize openMap with all subtasks expanded when task changes
   useEffect(() => {
     if (localTask?.subtasks) {
@@ -107,20 +99,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localTask?.id, localTask?.subtasks]); // Added localTask.subtasks and openMap as dependencies
 
-  // When entering edit mode, set the draft to the current description
-  useEffect(() => {
-    if (editingMainDescription && localTask) {
-      setMainDescriptionDraft(localTask.description || '');
-    }
-  }, [editingMainDescription, localTask]);
-
-  // Focus main description input when editing starts
-  useEffect(() => {
-    if (editingMainDescription && mainDescriptionRef.current) {
-      mainDescriptionRef.current.focus();
-    }
-  }, [editingMainDescription]);
-
   // Focus subtask description input when editing starts
   useEffect(() => {
     Object.keys(editingDescriptions).forEach(idStr => {
@@ -130,7 +108,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
       }
     });
   }, [editingDescriptions]);
-
   const handleSave = async () => {
     if (!localTask) return;
     const updates: any = {
@@ -139,7 +116,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
       task_type: localTask.task_type,
     };
     if (localTask.task_type === 'work-task') {
-      updates.deadline = localTask.deadline;
+      updates.deadline = localTask.deadline || null;
     } else if (localTask.task_type === 'food') {
       updates.carbohydrate = localTask.carbohydrate;
       updates.protein = localTask.protein;
@@ -291,7 +268,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
           )}
           <Checkbox checked={subtask.is_completed} sx={{ mr: 1, mt: 0.5 }} onChange={() => handleSubtaskToggle(subtask.id, !subtask.is_completed)} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontWeight: 500, fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subtask.title}</Typography>
+            <Typography sx={{ fontWeight: 500, fontSize: '1rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subtask.title}</Typography>
             {editing ? (
               <Box sx={{ mt: 1 }}>
                 <TextField
@@ -458,48 +435,26 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
               <MenuItem value="food">Food</MenuItem>
             </Select>
           </FormControl>
-          <Box sx={{ background: '#f7f7f7', borderRadius: 1, p: 2, minHeight: 48 }}>
+        <Box sx={{ background: '#f7f7f7', borderRadius: 1, p: 2, minHeight: 48 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
               <Typography variant="subtitle2" color="text.secondary" sx={{ flex: 1 }}>Description</Typography>
-              {!editingMainDescription && (
-                <IconButton size="small" onClick={() => setEditingMainDescription(true)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              )}
             </Box>
             <TextField
               multiline
               rows={3}
-              value={editingMainDescription ? mainDescriptionDraft : (localTask.description || '')}
-              inputRef={mainDescriptionRef}
-              onChange={e => editingMainDescription ? setMainDescriptionDraft(e.target.value) : undefined}
+              value={localTask.description || ''}
+              onChange={e => setLocalTask(prev => prev ? { ...prev, description: e.target.value } : null)}
               fullWidth
               sx={{ mb: 1 }}
               id="modal-task-description"
               name="modal-task-description"
-              InputProps={{
-                readOnly: !editingMainDescription,
-              }}
+              placeholder="Enter description"
             />
-            {editingMainDescription ? (
-              <Stack direction="row" spacing={1}>
-                <IconButton size="small" onClick={async () => {
-                  await updateTask(localTask.id, { description: mainDescriptionDraft });
-                  setEditingMainDescription(false);
-                }} color="primary">
-                  <CheckIcon fontSize="small" />
-                </IconButton>
-                <IconButton size="small" onClick={() => setEditingMainDescription(false)}>
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Stack>
-            ) : null}
-          </Box>
-          {localTask.task_type === 'work-task' && (
+          </Box>          {localTask.task_type === 'work-task' && (
             <TextField
               label="Deadline"
               type="date"
-              value={localTask.deadline || ''}
+              value={localTask.deadline ? new Date(localTask.deadline).toISOString().split('T')[0] : ''}
               onChange={e => setLocalTask(prev => prev ? { ...prev, deadline: e.target.value } : null)}
               fullWidth
               InputLabelProps={{ shrink: true }}

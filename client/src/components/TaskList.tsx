@@ -304,7 +304,7 @@ const TaskList: React.FC = () => {
               gap: 1,
               fontSize: { xs: '0.95rem', sm: '1rem' },
               overflowX: { xs: 'auto', sm: 'visible' },
-              whiteSpace: { xs: 'nowrap', sm: 'normal' },
+              whiteSpace: { sm: 'normal' },
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -393,7 +393,7 @@ const TaskList: React.FC = () => {
                                 }}
                               />
                               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0 }}>
-                                <Typography sx={{ fontSize: '1.1rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</Typography>
+                                <Typography sx={{ fontSize: '1.1rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25 }}>
                                   {task.task_type === 'basic' ? 'Basic' : task.task_type === 'work-task' ? 'Work' : task.task_type === 'food' ? 'Food' : task.task_type}
                                 </Typography>
