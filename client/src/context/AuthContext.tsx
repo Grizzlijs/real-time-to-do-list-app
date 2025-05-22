@@ -37,8 +37,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       
       // Get env variables (these will be injected at build time or from .env)
-      const expectedUsername = process.env.REACT_APP_LOGIN_USERNAME;
-      const expectedPassword = process.env.REACT_APP_LOGIN_PASSWORD;
+      // Using hardcoded default values as fallback for development
+      const expectedUsername = process.env.REACT_APP_LOGIN_USERNAME || 'test';
+      const expectedPassword = process.env.REACT_APP_LOGIN_PASSWORD || 'ubiquiti';
       
       console.log('Login attempt:', { 
         providedUsername: username,
