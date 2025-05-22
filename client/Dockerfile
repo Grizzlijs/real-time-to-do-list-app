@@ -24,8 +24,8 @@ FROM nginx:alpine
 # Copy built app from previous stage
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Optional: Replace the default nginx config
-# COPY nginx.conf /etc/nginx/nginx.conf
+# Copy the nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Expose port 80 (used by Railway by default)
 EXPOSE 80
