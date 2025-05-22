@@ -463,10 +463,17 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {  cons
               name="modal-task-deadline"
               sx={{
                 '& .MuiInputBase-root': {
-                  height: '56px', // Match the height of other inputs
+                  height: '45px', // Match the height of other inputs
                   '& input': {
                     height: '100%',
-                    padding: '8.5px 14px'
+                    padding: '8px',
+                    textAlign: 'center',
+                    verticalAlign: 'middle',
+                    display: 'flex',
+                    justifyContent: 'space-around',
+                  },
+                  '& .MuiInputBase-root input': {
+                    height: '20px',
                   }
                 }
               }}
