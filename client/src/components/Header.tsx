@@ -21,14 +21,17 @@ import {
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTodo } from '../context/TodoContext';
+import { useAuth } from '../context/AuthContext';
 import AddIcon from '@mui/icons-material/Add';
 import ListIcon from '@mui/icons-material/List';
 import MenuIcon from '@mui/icons-material/Menu';
+import LogoutIcon from '@mui/icons-material/Logout';
 import UserProfileButton from './UserProfileButton';
 // uuid is used in context but not here
 
 const Header: React.FC = () => {
   const { lists, createNewList, currentList } = useTodo();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -52,6 +55,11 @@ const Header: React.FC = () => {
   
   const handleCloseMobileMenu = () => {
     setMobileMenuAnchor(null);
+  };
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   // Open a list from the menu
@@ -177,16 +185,44 @@ const Header: React.FC = () => {
                 >
                   My Lists
                 </Button>
-                
-                <Divider orientation="vertical" flexItem sx={{ mx: 0 }} />
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0 }} />
                 
                 <UserProfileButton />
+                
+                <IconButton
+                  color="primary"
+                  onClick={handleLogout}
+                  title="Logout"
+                  sx={{
+                    ml: 1,
+                    '&:hover': {
+                      bgcolor: 'rgba(244, 67, 54, 0.08)',
+                      color: 'error.main'
+                    }
+                  }}
+                >
+                  <LogoutIcon />
+                </IconButton>
               </Stack>
             ) : (
               // Mobile menu
               <>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <UserProfileButton />
+                  <IconButton
+                    color="primary"
+                    onClick={handleLogout}
+                    title="Logout"
+                    sx={{
+                      mr: 1,
+                      '&:hover': {
+                        bgcolor: 'rgba(244, 67, 54, 0.08)',
+                        color: 'error.main'
+                      }
+                    }}
+                  >
+                    <LogoutIcon />
+                  </IconButton>
                   <IconButton 
                     color="primary" 
                     edge="end" 

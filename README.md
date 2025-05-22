@@ -13,6 +13,10 @@
     *   **Live Edits:** See changes from other users instantly as tasks are added, edited, or deleted.
     *   **User Presence:** View who is currently online and active on the same list, with distinct user colors.
     *   **Integrated Chat:** Communicate with collaborators directly within the list view.
+*   **🔒 Secure Access Control:**
+    *   **Protected Routes:** All app features are protected behind authentication.
+    *   **Environment-Based Credentials:** Login credentials configured via environment variables.
+    *   **Persistent Sessions:** Stay logged in between browser sessions.
 *   **✨ Intuitive User Experience:**
     *   **Drag & Drop:** Easily reorder tasks and convert tasks to subtasks (and vice-versa).
     *   **Nested Subtasks:** Structure complex projects with hierarchical to-do items.
@@ -65,6 +69,12 @@
 ✅ **I as a user can be sure that my todos will be persisted**
    - Data stored in PostgreSQL database.
    - Reliable persistence.
+
+✅ **I as a user can securely access the application**
+   - Protected login page with validation.
+   - Environment variable-based authentication.
+   - Persistent login sessions using localStorage.
+   - Easy logout functionality from any page.
 
 ## Tech Stack
 
@@ -122,16 +132,19 @@
         *   You can use the `setup-db.bat` script (ensure it's configured for your environment or adapt it) OR
         *   Manually execute the SQL commands in `server/db_setup.sql` against your `todo_app_db` database using a PostgreSQL client (like `psql` or pgAdmin). This will create the necessary tables.
 
-4.  **Client Configuration (Optional - for Socket URL):**
-    *   If your server runs on a different URL than `http://localhost:5000` during development, you might need to set the `REACT_APP_SOCKET_URL` in the client's environment.
+4.  **Client Configuration:**
     *   Navigate to the `client` directory: `cd client`
     *   Create a `.env` file:
         ```env
         # client/.env
         REACT_APP_SOCKET_URL=http://localhost:5000 
         REACT_APP_API_URL=http://localhost:5000
+        REACT_APP_LOGIN_USERNAME=admin
+        REACT_APP_LOGIN_PASSWORD=password123
         ```
-        Adjust the URL if your backend server is running elsewhere.
+        *   Adjust the Socket/API URL if your backend server is running elsewhere.
+        *   Configure custom login credentials as needed.
+        *   **IMPORTANT:** Use strong passwords in production environments.
 
 5.  **Start the Application:**
     From the **root** directory (`real-time-to-do-list-app`):
@@ -146,8 +159,11 @@
 ## Project Structure Highlights
 
 -   `/client`: Contains the React frontend application.
-    -   `/client/src/components`: Reusable UI components.
-    -   `/client/src/context`: React Context for state management (`TodoContext.tsx`).
+    -   `/client/src/components`: Reusable UI components including `ProtectedRoute.tsx`.
+    -   `/client/src/context`: React Context providers for state management:
+        -   `TodoContext.tsx`: Manages to-do lists and tasks.
+        -   `AuthContext.tsx`: Handles authentication and user sessions.
+    -   `/client/src/pages`: Main application pages including `LoginPage.tsx`.
     -   `/client/src/services`: API and WebSocket service integrations (`api.ts`, `socket.ts`).
 -   `/server`: Contains the Node.js Express backend application.
     -   `/server/src/controllers`: Request handlers for API routes.

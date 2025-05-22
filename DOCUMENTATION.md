@@ -11,12 +11,16 @@ This application is a modern, real-time collaborative to-do list system built wi
 ### 2.1. Frontend (Client)
 - **Framework**: React 18 with TypeScript
 - **UI Library**: Material UI (MUI v5) for components and styling.
-- **State Management**: React Context API (`TodoContext` for global state related to lists, tasks, users, and chat).
+- **State Management**: React Context API:
+  - `TodoContext`: For lists, tasks, users, and chat state.
+  - `AuthContext`: For authentication and user session management.
 - **Routing**: React Router (v6+ used, based on `client/package.json` typically `react-router-dom` v6+ for `ListPage` component usage).
+  - `ProtectedRoute` component for secure access control.
 - **Real-time Communication**: Socket.IO Client.
 - **Drag & Drop**: `@hello-pangea/dnd` (a maintained fork of React Beautiful DND).
 - **Markdown Rendering**: `react-markdown`.
 - **Build Tool**: Create React App (`react-scripts`).
+- **Authentication**: Environment variable-based credentials with local storage persistence.
 
 ### 2.2. Backend (Server)
 - **Framework**: Express.js with Node.js.
@@ -100,9 +104,45 @@ CREATE TABLE tasks (
 - **`TodoContext.tsx`**: Manages chat messages state and integrates with `socketService` to send and receive messages for the `currentList`.
 - **Message Persistence**: Chat history is saved to `localStorage` per list to provide some persistence across sessions for the local user.
 
-## 5. WebSocket Events Reference
+## 5. Authentication System
 
-### 5.1. Client to Server
+### 5.1. Overview
+The application uses a simple but effective environment variable-based authentication system. This approach provides a straightforward way to secure the application while maintaining ease of configuration:
+
+- All application routes are protected behind authentication.
+- Login credentials (username and password) are stored in environment variables.
+- User sessions are maintained using browser localStorage.
+- The AuthContext provider manages the authentication state across the application.
+
+### 5.2. Authentication Flow
+1. When a user accesses the application, the `AuthContext` checks for a token in localStorage.
+2. If no token exists or it's invalid, the user is redirected to the login page.
+3. After successful login, a simple token is stored in localStorage, and the user is redirected to their intended destination.
+4. Protected routes check the authentication state from `AuthContext` before rendering content.
+5. Users can log out at any time, which clears the token from localStorage.
+
+### 5.3. Configuration
+Login credentials are defined in environment variables:
+```env
+REACT_APP_LOGIN_USERNAME=admin
+REACT_APP_LOGIN_PASSWORD=password123
+```
+
+These should be set in the client's `.env` file or provided during build/deployment.
+
+### 5.4. Key Components
+- **`AuthContext.tsx`**: Manages authentication state and provides login/logout functions.
+- **`ProtectedRoute.tsx`**: Route wrapper that redirects unauthenticated users to the login page.
+- **`LoginPage.tsx`**: User interface for authentication with validation and error handling.
+
+### 5.5. Security Considerations
+- This implementation is suitable for basic access control but not for highly sensitive applications.
+- For production environments:
+  - Use strong, unique passwords.
+  - Consider implementing a more robust authentication system with JWTs or OAuth.
+  - Store sensitive environment variables securely using your deployment platform's secrets management.
+
+## 6. WebSocket Events Reference
 -   `join-list (listId: string)`: User joins a specific list's room.
 -   `leave-list (listId: string)`: User leaves a list's room.
 -   `update-user-info (data: { name: string, color: string })`: User updates their display name or color.
@@ -136,17 +176,23 @@ CREATE TABLE tasks (
 -   **`client/src/App.tsx`**: Root application component, sets up routing.
 -   **`client/src/types.ts` (or `client/src/types/index.ts`)**: TypeScript type definitions for frontend data structures (Task, TodoList, User, ChatMessage).
 -   **`client/src/context/TodoContext.tsx`**: Centralized state management for tasks, lists, user information, online users, and chat. Handles interactions with `apiService` and `socketService`.
+-   **`client/src/context/AuthContext.tsx`**: Manages authentication state, login/logout functionality, and session persistence.
 -   **`client/src/services/api.ts`**: Functions for making HTTP requests to the backend REST API.
 -   **`client/src/services/socket.ts`**: Manages Socket.IO connection, event emission, and listener registration for real-time updates.
 -   **`client/src/components/`**: Contains all React components.
     -   `TaskList.tsx`: Renders the list of tasks, handles drag-and-drop zones.
     -   `TaskItem.tsx`: Renders individual tasks, handles editing, completion, deletion, and subtask display. Optimized with `React.memo` and a custom `areEqual` comparison function.
     -   `Header.tsx`: Application header, includes user profile button and potentially list title.
+    -   `ProtectedRoute.tsx`: Component that wraps routes requiring authentication, redirecting to login page when needed.
     -   `UserProfileButton.tsx`: Displays current user info and allows opening the username dialog.
     -   `UsernameDialog.tsx`: Modal for users to set/update their name and color.
     -   `OnlineUsers.tsx`: Displays users currently active in the list.
     -   `Chat.tsx`: Interface for real-time chat.
--   **`client/src/pages/`**: Top-level page components (e.g., `HomePage.tsx`, `ListPage.tsx`).
+-   **`client/src/pages/`**: Top-level page components:
+    -   `HomePage.tsx`: Overview of available lists.
+    -   `ListPage.tsx`: Main interface for task list management.
+    -   `CreateListPage.tsx`: Interface for creating a new list.
+    -   `LoginPage.tsx`: Authentication page with form validation and error handling.
 
 ### 6.2. Server (`server/`)
 -   **`server/package.json`**: Backend dependencies and scripts (`dev`, `build`, `start`).

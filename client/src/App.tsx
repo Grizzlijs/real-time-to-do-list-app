@@ -2,10 +2,13 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { TodoProvider } from './context/TodoContext';
+import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import ListPage from './pages/ListPage';
 import CreateListPage from './pages/CreateListPage';
+import LoginPage from './pages/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 // Create a modern theme inspired by UniFi design
@@ -142,21 +145,62 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <TodoProvider>
-        <Router>
-          <div className="App">
-            <Header />
-            <main>
+      <AuthProvider>
+        <TodoProvider>
+          <Router>
+            <div className="App">
               <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/create" element={<CreateListPage />} />
-                <Route path="/list/:slug" element={<ListPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                
+                {/* Protected Routes */}
+                <Route 
+                  path="/" 
+                  element={
+                    <ProtectedRoute>
+                      <>
+                        <Header />
+                        <main>
+                          <HomePage />
+                        </main>
+                      </>
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/create" 
+                  element={
+                    <ProtectedRoute>
+                      <>
+                        <Header />
+                        <main>
+                          <CreateListPage />
+                        </main>
+                      </>
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/list/:slug" 
+                  element={
+                    <ProtectedRoute>
+                      <>
+                        <Header />
+                        <main>
+                          <ListPage />
+                        </main>
+                      </>
+                    </ProtectedRoute>
+                  } 
+                />
+                
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
-            </main>
-          </div>
-        </Router>
-      </TodoProvider>
+            </div>
+          </Router>
+        </TodoProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
