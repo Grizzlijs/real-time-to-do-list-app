@@ -51,7 +51,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
   const [isSubmittingRootSubtask, setIsSubmittingRootSubtask] = useState(false);
 
   // Memoize taskHierarchy to avoid recalculating on every render
-  const taskHierarchy = useMemo(() => getTaskHierarchy(), [tasks, getTaskHierarchy]);
+  const taskHierarchy = useMemo(() => getTaskHierarchy(), [getTaskHierarchy]);
 
   const findTaskInHierarchy = useCallback((tasksToSearch: Task[], targetId: number): Task | null => { // Renamed 'tasks' to 'tasksToSearch'
     for (const t of tasksToSearch) { // Use renamed 'tasksToSearch'
