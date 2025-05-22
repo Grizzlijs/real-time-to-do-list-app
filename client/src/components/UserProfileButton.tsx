@@ -4,7 +4,6 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import PeopleIcon from '@mui/icons-material/People';
 import { useTodo } from '../context/TodoContext';
 import UsernameDialog from './UsernameDialog';
-import { getUserInfoFromStorage } from '../services/socket';
 
 const UserProfileButton: React.FC = () => {
   const { currentUser, setUserInfo, isUsernameDialogOpen, setUsernameDialogOpen: setUsernameDialog, allOnlineUsers } = useTodo();
@@ -35,8 +34,6 @@ const UserProfileButton: React.FC = () => {
   if (!currentUser) {
     return null;
   }
-
-  const storedUserInfo = getUserInfoFromStorage();
 
   return (
     <>
@@ -151,8 +148,8 @@ const UserProfileButton: React.FC = () => {
       <UsernameDialog
         open={isUsernameDialogOpen}
         onClose={handleUsernameDialogClose}
-        initialUsername={storedUserInfo.name}
-        initialColor={storedUserInfo.color}
+        initialUsername={currentUser.name}
+        initialColor={currentUser.color}
       />
     </>
   );
