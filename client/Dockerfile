@@ -9,6 +9,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci --silent && npm cache clean --force
 
+# Copy .env.production to .env so React uses it during build
+COPY .env.production .env
+
 # Copy all source files
 COPY . .
 
