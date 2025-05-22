@@ -23,6 +23,8 @@ declare global {
   interface Window {
     ENV?: {
       REACT_APP_SOCKET_URL?: string;
+      REACT_APP_API_TIMEOUT?: number;
+      REACT_APP_SOCKET_RECONNECT_ATTEMPTS?: number;
     };
   }
 }
@@ -113,13 +115,16 @@ export const initSocket = (): Socket => {
     const auth: SocketAuth = {
       name: userInfo.name,
       color: userInfo.color
-    };
+    };    
+    // Get reconnection settings from ENV or use defaults
+    const reconnectionAttempts = window.ENV?.REACT_APP_SOCKET_RECONNECT_ATTEMPTS || 5;
+    const timeout = window.ENV?.REACT_APP_API_TIMEOUT || 20000;
     
     socket = io(SOCKET_URL, { 
-      reconnectionAttempts: 3,
+      reconnectionAttempts,
       reconnectionDelay: 2000,
-      timeout: 10000,
-      transports: ['websocket'],
+      timeout,
+      transports: ['websocket', 'polling'], // Try WebSocket first, fall back to polling
       autoConnect: true,
       auth,
       withCredentials: true

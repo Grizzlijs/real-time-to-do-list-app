@@ -15,6 +15,10 @@ RUN npm run build
 # Expose the port the server listens on
 EXPOSE 5000
 
+# Add healthcheck to improve container monitoring
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
+
 # Set NODE_ENV to production
 ENV NODE_ENV=production \
     PORT=5000 \

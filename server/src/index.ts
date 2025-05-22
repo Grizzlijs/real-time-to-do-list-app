@@ -67,6 +67,21 @@ app.get('/api', (_req: Request, res: Response) => {
   res.send('Real-time To-Do List API is running');
 });
 
+// Root route for health checks
+app.get('/', (_req: Request, res: Response) => {
+  res.send('Real-time To-Do List API is online. Use /api for API endpoints.');
+});
+
+// Add a health check endpoint
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date(),
+    uptime: process.uptime(),
+    version: process.env.npm_package_version || 'unknown'
+  });
+});
+
 // Set up Socket.IO handlers
 setupSocketHandlers(io);
 

@@ -17,7 +17,11 @@ ENV REACT_APP_SOCKET_URL=${REACT_APP_SOCKET_URL}
 RUN npm run build
 
 # Generate a runtime environment script that can be executed at container startup
-RUN echo "window.ENV = { REACT_APP_SOCKET_URL: '${REACT_APP_SOCKET_URL}' };" > /app/build/env-config.js
+RUN echo "window.ENV = { \
+  REACT_APP_SOCKET_URL: '${REACT_APP_SOCKET_URL}', \
+  REACT_APP_API_TIMEOUT: 30000, \
+  REACT_APP_SOCKET_RECONNECT_ATTEMPTS: 5 \
+};" > /app/build/env-config.js
 
 # Use Nginx for serving the built client
 FROM nginx:alpine
@@ -32,6 +36,12 @@ RUN echo 'server { \
     root /usr/share/nginx/html; \
     index index.html; \
     try_files $uri $uri/ /index.html; \
+  } \
+  # Health check endpoint \
+  location /health { \
+    access_log off; \
+    add_header Content-Type text/plain; \
+    return 200 "healthy\n"; \
   } \
 }' > /etc/nginx/conf.d/default.conf
 
