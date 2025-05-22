@@ -19,8 +19,11 @@ const io = new Server(server, {
     origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization']
-  }
+    allowedHeaders: ['Content-Type', 'Authorization', 'CF-Socket']
+  },
+  // Add longer timeouts for Cloudflare
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Middlewares
@@ -28,7 +31,7 @@ app.use(cors({
   origin: process.env.CLIENT_URL ,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'CF-Socket']
 }));
 
 // Add cookie parser middleware

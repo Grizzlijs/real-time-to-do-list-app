@@ -29,19 +29,40 @@ FROM nginx:alpine
 # Copy the built assets to nginx serving folder
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Add custom nginx configuration for SPA support
+# Add custom nginx configuration for SPA support with enhanced configuration for Cloudflare
 RUN echo 'server { \
   listen 80; \
+  server_name _; \
+  \
+  # Increase timeouts for Cloudflare \
+  proxy_connect_timeout 300s; \
+  proxy_send_timeout 300s; \
+  proxy_read_timeout 300s; \
+  \
+  # Main location \
   location / { \
     root /usr/share/nginx/html; \
     index index.html; \
     try_files $uri $uri/ /index.html; \
+    \
+    # Add headers for Cloudflare \
+    add_header X-Content-Type-Options nosniff; \
+    add_header X-Frame-Options SAMEORIGIN; \
+    add_header X-XSS-Protection "1; mode=block"; \
   } \
+  \
   # Health check endpoint \
-  location /health { \
+  location = /health { \
     access_log off; \
     add_header Content-Type text/plain; \
-    return 200 "healthy\n"; \
+    return 200 "healthy\\n"; \
+  } \
+  \
+  # For Cloudflare health checks \
+  location = /cdn-cgi/health { \
+    access_log off; \
+    add_header Content-Type text/plain; \
+    return 200 "healthy\\n"; \
   } \
 }' > /etc/nginx/conf.d/default.conf
 

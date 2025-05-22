@@ -29,6 +29,13 @@ declare global {
   }
 }
 
+// Detect if we're running behind Cloudflare
+const isCloudflare = () => {
+  return navigator.userAgent.includes('CloudFront') || 
+         document.cookie.includes('__cfduid') ||
+         !!document.querySelector('meta[name="cf-ray"]');
+};
+
 interface SocketAuth {
   name: string;
   color: string;
@@ -115,20 +122,32 @@ export const initSocket = (): Socket => {
     const auth: SocketAuth = {
       name: userInfo.name,
       color: userInfo.color
-    };    
-    // Get reconnection settings from ENV or use defaults
+    };    // Get reconnection settings from ENV or use defaults
     const reconnectionAttempts = window.ENV?.REACT_APP_SOCKET_RECONNECT_ATTEMPTS || 5;
     const timeout = window.ENV?.REACT_APP_API_TIMEOUT || 20000;
     
-    socket = io(SOCKET_URL, { 
+    // Configure socket options - more robust for Cloudflare
+    const socketOptions: any = {
       reconnectionAttempts,
       reconnectionDelay: 2000,
       timeout,
-      transports: ['websocket', 'polling'], // Try WebSocket first, fall back to polling
+      // Try both transports, WS first, then polling
+      transports: ['websocket', 'polling'],
       autoConnect: true,
       auth,
       withCredentials: true
-    });
+    };
+    
+    // Add Cloudflare-specific options if needed
+    if (isCloudflare()) {
+      socketOptions.extraHeaders = {
+        'CF-Socket': 'true' // Custom header to identify requests
+      };
+    }
+    
+    console.log('Socket options:', socketOptions);
+    
+    socket = io(SOCKET_URL, socketOptions);
     
     socket.on('connect', () => {
       isConnecting = false;
