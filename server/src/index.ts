@@ -15,7 +15,7 @@ const app: Application = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://192.168.8.238:3000',
+    origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -24,7 +24,7 @@ const io = new Server(server, {
 
 // Middlewares
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://192.168.8.238:3000',
+  origin: process.env.CLIENT_URL,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']

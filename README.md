@@ -111,12 +111,11 @@
         *   Create a `.env` file by copying `.env.example` (if it doesn't exist, create one with the following content):
             ```env
             # server/.env
-            DB_USER=your_postgres_user
-            DB_HOST=localhost
-            DB_DATABASE=todo_app_db
-            DB_PASSWORD=your_postgres_password
-            DB_PORT=5432
-            PORT=5000
+            PG_USER=postgres
+            PG_HOST=localhost
+            PG_DATABASE=todo_app
+            PG_PASSWORD=your_pw
+            PG_PORT=5432
             ```
         *   Replace the placeholder values with your actual PostgreSQL credentials.
     *   **Initialize Database Schema:**
