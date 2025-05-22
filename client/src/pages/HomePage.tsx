@@ -1468,9 +1468,10 @@ const ProFeaturesModal: React.FC<{
                           p: 1,
                           borderRadius: 1,
                           bgcolor: 'rgba(5, 89, 201, 0.08)',
+                          height: '100%',
                         }}>
                           <CodeIcon sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
-                          <Typography variant="body2" fontWeight={500}>JavaScript/TypeScript</Typography>
+                          <Typography variant="body2" fontWeight={500}>JavaScript & TypeScript</Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={6} md={4}>
@@ -1480,6 +1481,7 @@ const ProFeaturesModal: React.FC<{
                           p: 1,
                           borderRadius: 1,
                           bgcolor: 'rgba(5, 89, 201, 0.08)',
+                          height: '100%',
                         }}>
                           <CodeIcon sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
                           <Typography variant="body2" fontWeight={500}>React</Typography>
@@ -1492,6 +1494,7 @@ const ProFeaturesModal: React.FC<{
                           p: 1,
                           borderRadius: 1,
                           bgcolor: 'rgba(5, 89, 201, 0.08)',
+                          height: '100%',
                         }}>
                           <StorageIcon sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
                           <Typography variant="body2" fontWeight={500}>REST APIs</Typography>
@@ -1504,6 +1507,7 @@ const ProFeaturesModal: React.FC<{
                           p: 1,
                           borderRadius: 1,
                           bgcolor: 'rgba(5, 89, 201, 0.08)',
+                          height: '100%',
                         }}>
                           <CodeIcon sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
                           <Typography variant="body2" fontWeight={500}>HTML5/CSS3</Typography>
@@ -1516,6 +1520,7 @@ const ProFeaturesModal: React.FC<{
                           p: 1,
                           borderRadius: 1,
                           bgcolor: 'rgba(5, 89, 201, 0.08)',
+                          height: '100%',
                         }}>
                           <CodeIcon sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
                           <Typography variant="body2" fontWeight={500}>Node.js</Typography>
@@ -1528,6 +1533,7 @@ const ProFeaturesModal: React.FC<{
                           p: 1,
                           borderRadius: 1,
                           bgcolor: 'rgba(5, 89, 201, 0.08)',
+                          height: '100%',
                         }}>
                           <SpeedIcon sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
                           <Typography variant="body2" fontWeight={500}>Performance Optimization</Typography>
