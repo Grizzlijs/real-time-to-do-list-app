@@ -173,5 +173,47 @@
 -   `DOCUMENTATION.md`: Detailed technical documentation.
 -   `db_setup.sql`: SQL script for initial database schema.
 
+## Known Issues and Areas for Improvement
+
+### Performance Optimizations
+- **Client-side Performance:**
+  - Implement virtualization for long task lists to improve rendering performance
+  - Add pagination for large task lists
+  - Optimize re-renders in task components using React.memo and useCallback
+  - Implement code splitting for better initial load time
+  - Add service worker for offline capabilities
+
+- **Server-side Performance:**
+  - Implement caching layer (Redis) for frequently accessed data
+  - Add database query optimization and indexing
+  - Implement rate limiting for API endpoints
+  - Add request compression
+
+### Technical Debt and Maintenance
+- Update dependencies to latest versions:
+  - React 18.2.0 → Latest
+  - Material UI → Latest
+  - Socket.IO → Latest
+  - TypeScript → Latest
+  - Node.js → Latest LTS
+- Add comprehensive test coverage:
+  - Unit tests for components
+  - Integration tests for API endpoints
+  - E2E tests for critical user flows
+- Implement proper error boundaries
+- Add logging and monitoring
+- Improve TypeScript type definitions
+- Add proper documentation for API endpoints
+
+### Security Enhancements
+- Implement proper CSRF protection
+- Add rate limiting for authentication attempts
+- Implement proper password hashing
+- Add input sanitization
+- Implement proper session management
+- Add security headers
+- Implement proper CORS configuration
+
+
 ## License
 All rights reserved @2025 - emilssamoilovs.com

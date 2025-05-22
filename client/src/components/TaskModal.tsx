@@ -506,6 +506,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, task, onClose }) => {
               variant="outlined"
               id="modal-task-deadline"
               name="modal-task-deadline"
+              sx={{
+                '& .MuiInputBase-root': {
+                  height: '56px', // Match the height of other inputs
+                  '& input': {
+                    height: '100%',
+                    padding: '8.5px 14px'
+                  }
+                }
+              }}
             />
           )}
           {localTask.task_type === 'food' && (
