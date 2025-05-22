@@ -143,6 +143,27 @@
     *   The backend server will typically run on `http://localhost:5000` (or the `PORT` specified in `server/.env`).
     *   The client application will typically run on `http://localhost:3000`.
 
+## Docker Deployment
+
+This application can be containerized using Docker and deployed with services like Railway.
+
+### Railway Deployment
+
+This project includes Docker configuration files optimized for Railway:
+
+1. **Option 1: Deploy as separate services** (recommended)
+   - Use `server/Dockerfile` for the backend
+   - Use `client/Dockerfile` for the frontend
+   - Add Railway's PostgreSQL plugin for the database
+
+2. **Option 2: Deploy as a single service**
+   - Use the root `Dockerfile` that combines frontend and backend
+   - Add Railway's PostgreSQL plugin for the database
+
+For detailed deployment instructions, see:
+- [DOCKER.md](DOCKER.md) - General Docker information
+- [RAILWAY.md](RAILWAY.md) - Step-by-step Railway deployment guide
+
 ## Project Structure Highlights
 
 -   `/client`: Contains the React frontend application.
