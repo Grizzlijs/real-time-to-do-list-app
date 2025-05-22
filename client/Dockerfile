@@ -1,34 +1,31 @@
-# Use an official Node.js runtime as a parent image
-FROM node:18-alpine AS build
+# Stage 1: Build the React app
+FROM node:22-alpine as build
 
-# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json (or yarn.lock)
+# Copy only package files for better caching
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci --silent && npm cache clean --force
 
-# Copy the rest of the application code
+# Copy all source files
 COPY . .
 
-# Build the React application
+# Build the React app
 RUN npm run build
 
-# Stage 2: Serve the static files using a lightweight server
-FROM node:18-alpine
+# Stage 2: Serve the build using Nginx
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy built app from previous stage
+COPY --from=build /app/build /usr/share/nginx/html
 
-# Install serve to serve static files
-RUN npm install -g serve
+# Optional: Replace the default nginx config
+# COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy the build output from the build stage
-COPY --from=build /app/build ./build
+# Expose port 80 (used by Railway by default)
+EXPOSE 80
 
-# Expose the port the app runs on
-EXPOSE 3000
-
-# Command to serve the static files
-CMD ["serve", "-s", "build", "-l", "3000"]
+# Start Nginx (default command is already set, but for clarity:)
+CMD ["nginx", "-g", "daemon off;"]
