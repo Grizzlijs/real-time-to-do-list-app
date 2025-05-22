@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import taskRoutes from './routes/taskRoutes';
 import listRoutes from './routes/listRoutes';
 import { setupSocketHandlers } from './utils/socket';
@@ -61,13 +62,26 @@ app.use(express.json());
 app.use('/api/tasks', taskRoutes);
 app.use('/api/lists', listRoutes);
 
-// Base route
-app.get('/', (_req: Request, res: Response) => {
+// Base route for API
+app.get('/api', (_req: Request, res: Response) => {
   res.send('Real-time To-Do List API is running');
 });
 
 // Set up Socket.IO handlers
 setupSocketHandlers(io);
+
+// Serve static files from the 'public' directory in production
+// This is used when deploying frontend and backend together
+if (process.env.NODE_ENV === 'production') {
+  // Check if the public directory exists (for combined deployment)
+  const publicPath = path.join(__dirname, '../public');
+  app.use(express.static(publicPath));
+  
+  // Serve index.html for any unmatched routes (for SPA routing)
+  app.get('*', (_req: Request, res: Response) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
+}
 
 // Start server
 const PORT = process.env.PORT || 5000;

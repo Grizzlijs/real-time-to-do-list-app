@@ -1,7 +1,16 @@
 import { io, Socket } from 'socket.io-client';
 import { Task } from '../types';
 
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+// Get Socket URL from window.ENV or fallback to .env or default
+declare global {
+  interface Window {
+    ENV?: {
+      REACT_APP_SOCKET_URL?: string;
+    };
+  }
+}
+
+const SOCKET_URL = window.ENV?.REACT_APP_SOCKET_URL || process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
 interface SocketAuth {
   name: string;
