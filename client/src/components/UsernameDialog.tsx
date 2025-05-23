@@ -15,7 +15,7 @@ import { styled } from '@mui/material/styles';
 
 interface UsernameDialogProps {
   open: boolean;
-  onClose: (username: string | null) => void;
+  onClose: (username: string | null, color: string) => void;
   initialUsername: string;
   initialColor: string;
 }
@@ -54,11 +54,11 @@ const UsernameDialog: React.FC<UsernameDialogProps> = ({
   }, [initialUsername, initialColor]);
 
   const handleSubmit = () => {
-    onClose(username.trim() || initialUsername);
+    onClose(username.trim() || initialUsername, selectedColor);
   };
 
   const handleCancel = () => {
-    onClose(null);
+    onClose(null, '');
   };
 
   return (

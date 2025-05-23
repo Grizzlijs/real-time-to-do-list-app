@@ -23,11 +23,11 @@ const UserProfileButton: React.FC = () => {
     handleClose();
   };
 
-  const handleUsernameDialogClose = (username: string | null) => {
+  const handleUsernameDialogClose = (username: string | null, color: string) => {
     setUsernameDialog(false);
     
     if (username && currentUser) {
-      setUserInfo(username, currentUser.color);
+      setUserInfo(username, color);
     }
   };
 
